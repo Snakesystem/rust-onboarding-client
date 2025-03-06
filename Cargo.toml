@@ -1,5 +1,5 @@
 [package]
-name = "actix-onboarding-client"
+name = "rust-onboarding-client"
 version = "0.1.0"
 edition = "2021"
 

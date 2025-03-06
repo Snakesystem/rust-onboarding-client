@@ -85,32 +85,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix-onboarding-client"
-version = "0.1.0"
-dependencies = [
- "actix-identity",
- "actix-session",
- "actix-web",
- "aes",
- "base64 0.22.1",
- "bigdecimal",
- "chrono",
- "ctr",
- "env_logger",
- "futures",
- "jsonwebtoken",
- "log",
- "serde",
- "serde_json",
- "sha2",
- "tiberius",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "uuid",
-]
-
-[[package]]
 name = "actix-router"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1785,6 +1759,32 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "rust-onboarding-client"
+version = "0.1.0"
+dependencies = [
+ "actix-identity",
+ "actix-session",
+ "actix-web",
+ "aes",
+ "base64 0.22.1",
+ "bigdecimal",
+ "chrono",
+ "ctr",
+ "env_logger",
+ "futures",
+ "jsonwebtoken",
+ "log",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tiberius",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "uuid",
 ]
 
 [[package]]
