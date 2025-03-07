@@ -31,7 +31,7 @@ Response Body(400):
 {
     "result": false,
     "message": "Invalid Request",
-    "data": "Email is required, .etc"
+    "error": "Email is required, .etc"
 }
 ```
 Response Body(500):
@@ -80,7 +80,7 @@ Response Body(400):
 {
     "result": false,
     "message": "Invalid Request",
-    "data": "Invalid email & password, .etc"
+    "error": "Invalid email & password, .etc"
 }
 ```
 Response Body(500):
@@ -129,7 +129,7 @@ Response Body(400):
 {
     "result": false,
     "message": "Invalid Request",
-    "data": "Email already register, .etc"
+    "error": "Email already register, .etc"
 }
 ```
 Response Body(500):
@@ -137,7 +137,7 @@ Response Body(500):
 {
     "result": false,
     "message": "Login Failed",
-    "data": "Internal Server Error"
+    "error": "Internal Server Error"
 }
 ```
 
@@ -170,7 +170,7 @@ Response Body(400):
 {
     "result": false,
     "message": "Invalid Request",
-    "data": "Token not found, .etc"
+    "error": "Token not found, .etc"
 }
 ```
 Response Body(500):
@@ -178,7 +178,7 @@ Response Body(500):
 {
     "result": false,
     "message": "Session Failed",
-    "data": "Internal Server Error"
+    "error": "Internal Server Error"
 }
 ```
 
@@ -211,7 +211,7 @@ Response Body(400):
 {
     "result": false,
     "message": "Invalid Request",
-    "data": "Token not found, .etc"
+    "error": "Token not found, .etc"
 }
 ```
 Response Body(500):
@@ -219,7 +219,7 @@ Response Body(500):
 {
     "result": false,
     "message": "Refresh token failed",
-    "data": "Internal Server Error"
+    "error": "Internal Server Error"
 }
 ```
 
@@ -238,7 +238,7 @@ Response Body(400):
 {
     "result": false,
     "message": "Activation Failed",
-    "data": "Token is not valid, .etc"
+    "error": "Token is not valid, .etc"
 }
 ```
 Response Body(500):
@@ -246,7 +246,7 @@ Response Body(500):
 {
     "result": false,
     "message": "Activation Failed",
-    "data": "Internal Server Error"
+    "error": "Internal Server Error"
 }
 ```
 
@@ -271,7 +271,7 @@ Response Body(400):
 {
     "result": false,
     "message": "Forgot password failed",
-    "data": "Email not found, .etc"
+    "error": "Email not found, .etc"
 }
 ```
 Response Body(500):
@@ -279,7 +279,7 @@ Response Body(500):
 {
     "result": false,
     "message": "Forgot password failed",
-    "data": "Internal Server Error"
+    "error": "Internal Server Error"
 }
 ```
 
@@ -306,7 +306,7 @@ Response Body(400):
 {
     "result": false,
     "message": "Reset password failed",
-    "data": "OTP Token is not valid"
+    "error": "OTP Token is not valid"
 }
 ```
 Response Body(500):
@@ -314,6 +314,6 @@ Response Body(500):
 {
     "result": false,
     "message": "Reset password failed",
-    "data": "Internal Server Error"
+    "error": "Internal Server Error"
 }
 ```

@@ -1,3 +1,5 @@
+use bb8::Pool;
+use bb8_tiberius::ConnectionManager;
 use tiberius::{Client, Config};
 use tokio::net::TcpStream;
 use tokio_util::compat::{Compat, TokioAsyncWriteCompatExt};
@@ -50,21 +52,17 @@ impl<'a> Drop for BeginTransaction<'a> {
     }
 }
 
-pub async fn connection_pool(database: &str) -> Result<Client<Compat<TcpStream>>, Box<dyn std::error::Error>> {
-    // It uses an ADO.NET connection string to connect to SQL Server.
-    // Replace with your actual connection string
-    let config = Config::from_ado_string(
-        &"Server=tcp:db12877.public.databaseasp.net;User=db12877;Password=Snakesystem@09;TrustServerCertificate=true;Database={};".replace("{}", database),
-    )?;
+pub async fn create_pool(database: &str) -> Result<Pool<ConnectionManager>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+    let connection_string = format!(
+        "Server=tcp:db12877.public.databaseasp.net;User=db12877;Password=Snakesystem@09;TrustServerCertificate=true;Database={}",
+        database
+    );
 
-    let tcp = <TcpStream as tiberius::SqlBrowser>::connect_named(&config).await?;
-    // let _ = tcp.set_nodelay(true);
+    let config = Config::from_ado_string(&connection_string)?;
+    let manager = ConnectionManager::new(config);
+    let pool = Pool::builder().max_size(10).build(manager).await?;
 
-    let client = Client::connect(config, tcp.compat_write()).await?;
-    println!("Connected to SQL Server");
-    // let _ = client.close().await;
-
-    Ok(client)
+    Ok(pool)
 }
 
 pub async  fn begin_transaction(client: &mut Client<Compat<TcpStream>>) -> Result<(), Box<dyn std::error::Error>> {

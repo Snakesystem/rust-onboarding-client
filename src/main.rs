@@ -1,7 +1,9 @@
 use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{ cookie::{time::Duration, Key}, get, middleware, web, App, HttpServer};
-use contexts::logger::{init_log, write_log};
+use actix_web::{ cookie::{time::Duration, Key}, error, get, middleware, web, App, HttpResponse, HttpServer};
+use contexts::{connection::create_pool, logger::write_log, model::ActionResult};
+use handlers::auth_handler::auth_scope;
+use log::info;
 
 mod contexts {
     pub mod connection;
@@ -11,9 +13,30 @@ mod contexts {
     pub mod crypto;
 }
 
+mod handlers {
+    pub mod auth_handler;
+}
+
+mod services {
+    pub mod auth_service;
+}
+
 #[get("/")]
 async fn health_check() -> String {
     format!("Custommer onboarding Web Api")
+}
+
+fn json_error_handler(err: error::JsonPayloadError, _req: &actix_web::HttpRequest) -> actix_web::Error {
+    let error_message = format!("Json deserialize error: {}", err);
+
+    let result = ActionResult::<String> { // <- Ubah dari ActionResult<()> ke ActionResult<String>
+        result: false,
+        message: "Invalid Request".to_string(),
+        error: Some(error_message), // <- Sekarang cocok karena `data: Option<String>`
+        data: None,
+    };
+
+    error::InternalError::from_response(err, HttpResponse::BadRequest().json(result)).into()
 }
 
 #[actix_web::main]
@@ -21,15 +44,18 @@ async fn main() -> std::io::Result<()> {
     env_logger::init(); // Aktifkan logging
     let secret_key: Key = Key::generate(); 
 
-    let log_file = init_log().expect("Failed to initialize log file");
+    let db_pool = create_pool("db12877").await.expect("Failed to create database pool");
+
     write_log("INFO", "Test log message: Logging is working");
-    dbg!("🚀 Application running on http://{}", log_file);
+    info!("🚀 Application running on http://127.0.0.1:8000");
     
     HttpServer::new(move || {
         App::new()
-            .service(web::scope("/v1")
+            .service(web::scope("/api/v1")
+            .service(auth_scope())
         )
-        // .app_data(web::Data::new(pool))
+        .app_data(web::Data::new(db_pool.clone()))
+        .app_data(web::JsonConfig::default().error_handler(json_error_handler))
         .service(health_check)
         .wrap(IdentityMiddleware::default())
             .wrap(
