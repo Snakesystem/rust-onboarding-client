@@ -1777,6 +1777,7 @@ dependencies = [
  "futures",
  "jsonwebtoken",
  "log",
+ "openssl",
  "serde",
  "serde_json",
  "sha2",
