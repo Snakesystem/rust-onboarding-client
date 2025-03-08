@@ -4,7 +4,6 @@ use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use sha2::{Digest, Sha256}; // Import SHA-256 untuk hashing
 
 type Aes256Ctr = ctr::Ctr64BE<Aes256>; // AES-256 dengan Counter Mode (CTR)
-
 /// 🔑 Kunci rahasia (HARUS 32-byte untuk AES-256)
 const SECRET_KEY: &[u8; 32] = b"0123456789abcdef0123456789abcdef";
 

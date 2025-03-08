@@ -1,6 +1,8 @@
 use actix_web::web;
 use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
+use chrono::{NaiveDateTime, TimeZone, Utc};
+use tiberius::QueryStream;
 
 use crate::contexts::{crypto::encrypt_text, model::{ActionResult, LoginRequest, RegisterRequest, WebUser}};
 
@@ -14,16 +16,25 @@ impl AuthService {
 
         match connection.clone().get().await {
             Ok(mut conn) => {
-                let query_result = conn.query("SELECT AuthUserNID, Email FROM AuthUser WHERE Email = @P1 AND Password = @P2", &[&request.email, &enc_password]).await;
+                let query_result: Result<QueryStream, _> = conn.query(
+                    r#"SELECT AuthUserNID, Email, Handphone, disableLogin, Picture, RegisterDate FROM AuthUser 
+                    WHERE Email = @P1 AND Password = @P2"#, &[&request.email, &enc_password]).await;
                 match query_result {
                     Ok(rows) => {
                         if let Ok(Some(row)) = rows.into_row().await {
                             result.result = true;
                             result.message = format!("Welcome {}", request.email);
                             result.data = Some(WebUser{
-                                auth_usernid: row.get(0).unwrap_or(0),
-                                email: row.get::<&str, _>(1).map_or_else(|| "".to_string(), |s| s.to_string())
-                            });
+                                auth_usernid: row.get("AuthUserNID").unwrap_or(0),
+                                email: row.get::<&str, _>("Email").map_or_else(|| "".to_string(), |s| s.to_string()),
+                                mobile_phone: row.get::<&str, _>("Handphone").map_or_else(|| "".to_string(), |s| s.to_string()),
+                                disabled_login: row.get("disableLogin").unwrap_or(false),
+                                picture: Some(row.get::<&str, _>("Picture").map_or_else(|| "".to_string(), |s| s.to_string())),
+                                register_date: row
+                                    .get::<NaiveDateTime, _>("RegisterDate")
+                                    .map(|dt| dt.and_utc()) // 🔥 Konversi ke DateTime<Utc>
+                                    .unwrap_or_else(|| Utc.timestamp_opt(0, 0).unwrap()), // Default jika kosong
+                            }); 
 
                             return result;
                         } else {
@@ -40,7 +51,7 @@ impl AuthService {
             Err(err) => {
                 result.error = format!("Internal Server error: {:?}", err).into();
                 return result;
-            }, // Gagal mendapatkan koneksi
+            }, 
         }
     }
 

@@ -1,46 +1,48 @@
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-use chrono::{Utc, Duration};
-use bigdecimal::BigDecimal;
+use chrono::{DateTime, Duration, Utc};
+use super::model::WebUser;
 
 const SECRET_KEY: &[u8] = b"supersecretkey"; // 🔥 Ganti dengan key yang lebih aman!
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     result: bool,
+    auth_usernid: i32,
     email: String,
+    mobile_phone: String,
+    disabled_login: bool,
     expired_token: i64,
     expired_date: String,
-    is_active: bool,
-    payment: BigDecimal,
+    register_date: DateTime<Utc>,
     exp: usize,
+    picture: Option<String>,
 }
 
 impl Claims {
-    pub fn new(email: String, is_active: bool, payment: BigDecimal) -> Self {
+    pub fn new(user: WebUser) -> Self {
         let expired_token = Utc::now() + Duration::days(7); // Token berlaku 7 hari
         let expired_date = expired_token.format("%Y-%m-%d %H:%M:%S").to_string();
         let exp = expired_token.timestamp() as usize; // ⏳ Set exp untuk validasi JWT
 
         Self {
             result: true,
-            email,
+            email: user.email,
             expired_token: expired_token.timestamp(),
             expired_date,
-            is_active,
-            payment,
+            disabled_login: user.disabled_login,
+            auth_usernid: user.auth_usernid,
+            mobile_phone: user.mobile_phone,
+            picture: user.picture,
+            register_date: user.register_date,
             exp, // 🔥 Tambahkan ke struct
         }
     }
 }
 
 // 🔥 Generate JWT Token
-pub fn create_jwt(
-    email: String,
-    is_active: bool,
-    payment: BigDecimal,
-) -> Result<String, jsonwebtoken::errors::Error> {
-    let claims = Claims::new(email, is_active, payment);
+pub fn create_jwt(user: WebUser) -> Result<String, jsonwebtoken::errors::Error> {
+    let claims = Claims::new(user); // 🔥 Clone user di sini
     let token = encode(
         &Header::default(),
         &claims,

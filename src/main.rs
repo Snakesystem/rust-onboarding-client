@@ -2,7 +2,7 @@ use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{ cookie::{time::Duration, Key}, error, get, middleware, web, App, HttpResponse, HttpServer};
 use contexts::{connection::create_pool, logger::write_log, model::ActionResult};
-use handlers::auth_handler::auth_scope;
+use handlers::{auth_handler::auth_scope, generic_handler::generic_scope, option_handler::option_scope};
 use log::info;
 
 mod contexts {
@@ -15,10 +15,14 @@ mod contexts {
 
 mod handlers {
     pub mod auth_handler;
+    pub mod generic_handler;
+    pub mod option_handler;
 }
 
 mod services {
     pub mod auth_service;
+    pub mod generic_service;
+    pub mod option_service;
 }
 
 #[get("/")]
@@ -43,7 +47,7 @@ fn json_error_handler(err: error::JsonPayloadError, _req: &actix_web::HttpReques
 async fn main() -> std::io::Result<()> {
     env_logger::init(); // Aktifkan logging
     let secret_key: Key = Key::generate(); 
-
+    dotenvy::dotenv().ok();
     let db_pool = create_pool("db12877").await.expect("Failed to create database pool");
 
     write_log("INFO", "Test log message: Logging is working");
@@ -53,6 +57,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .service(web::scope("/api/v1")
             .service(auth_scope())
+            .service(generic_scope())
+            .service(option_scope())
         )
         .app_data(web::Data::new(db_pool.clone()))
         .app_data(web::JsonConfig::default().error_handler(json_error_handler))

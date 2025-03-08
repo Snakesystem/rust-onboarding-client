@@ -3,7 +3,7 @@ use bb8_tiberius::ConnectionManager;
 use tiberius::{Client, Config};
 use tokio::net::TcpStream;
 use tokio_util::compat::{Compat, TokioAsyncWriteCompatExt};
-use std::{error::Error, ops::{Deref, DerefMut}};
+use std::{error::Error, ops::{Deref, DerefMut},env};
 
 pub struct BeginTransaction<'a> {
     client: &'a mut Client<Compat<TcpStream>>,
@@ -53,8 +53,12 @@ impl<'a> Drop for BeginTransaction<'a> {
 }
 
 pub async fn create_pool(database: &str) -> Result<Pool<ConnectionManager>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+    let database_user = env::var("DATABASE_USER");
+    let database_password = env::var("DATABASE_PASSWORD");
     let connection_string = format!(
-        "Server=tcp:db12877.public.databaseasp.net;User=db12877;Password=Snakesystem@09;TrustServerCertificate=true;Database={}",
+        "Server=tcp:db12877.public.databaseasp.net;User={};Password={};TrustServerCertificate=true;Database={}",
+        database_user.unwrap(),
+        database_password.unwrap(),
         database
     );
 

@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 pub struct DateTimeConverter;
@@ -56,8 +57,34 @@ impl<T> Default for ActionResult<T> {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct WebUser {
     pub auth_usernid: i32,
     pub email: String,
+    pub mobile_phone: String,
+    pub disabled_login: bool,
+    pub picture: Option<String>,
+    #[serde(serialize_with = "serialize_datetime")]
+    pub register_date: chrono::DateTime<Utc>
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct Company {
+    pub company_id: String,
+    pub company_name: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct ListData {
+    pub data_id: i32,
+    pub code: String,
+    pub description: String,
+}
+
+fn serialize_datetime<S>(dt: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let formatted = dt.format("%Y-%m-%d %H:%M:%S").to_string();
+    serializer.serialize_str(&formatted)
 }
