@@ -1,6 +1,7 @@
-use actix_web::web;
+use actix_web::{error, web, HttpRequest, HttpResponse, Responder};
 use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
+use serde_json::json;
 use tiberius::QueryStream;
 
 use crate::contexts::model::{ActionResult, Company};
@@ -43,5 +44,38 @@ impl GenericService {
         }
     }
 
+    pub async fn not_found(req: HttpRequest) -> impl Responder {
+        HttpResponse::NotFound().json({
+            json!({
+                "result": false,
+                "message": "Not Found",
+                "error": format!("Url '{}' not found. Please check the URL.", req.path())
+            })
+        })
+    }
     
+    pub fn json_error_handler(err: error::JsonPayloadError, _req: &actix_web::HttpRequest) -> actix_web::Error {
+        let error_message = format!("Json deserialize error: {}", err);
+
+        let result = ActionResult::<String> { // <- Ubah dari ActionResult<()> ke ActionResult<String>
+            result: false,
+            message: "Invalid Request".to_string(),
+            error: Some(error_message), // <- Sekarang cocok karena `data: Option<String>`
+            data: None,
+        };
+
+        error::InternalError::from_response(err, HttpResponse::BadRequest().json(result)).into()
+    }
+
+    /// Helper untuk validasi path parameter yang harus berupa integer
+    pub fn parse_param<T: std::str::FromStr>(param: &str) -> Result<T, HttpResponse> {
+        param.parse::<T>().map_err(|_| {
+            HttpResponse::BadRequest().json(json!({
+                "result": false,
+                "message": "Bad Request",
+                "error": format!("Invalid parameter '{}'. Please provide a valid {}", param, std::any::type_name::<T>())
+            }))
+        })
+    }
+
 }
