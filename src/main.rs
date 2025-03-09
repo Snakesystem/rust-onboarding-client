@@ -1,6 +1,7 @@
+use actix_cors::Cors;
 use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{ cookie::{time::Duration, Key}, get, middleware, web::{self, route}, App, HttpServer};
+use actix_web::{ cookie::{time::Duration, Key}, get, http, middleware, web::{self, route}, App, HttpServer};
 use contexts::{connection::create_pool, logger::write_log};
 use handlers::{auth_handler::auth_scope, generic_handler::generic_scope, option_handler::option_scope};
 use log::info;
@@ -42,6 +43,13 @@ async fn main() -> std::io::Result<()> {
     info!("🚀 Application running on http://127.0.0.1:8000");
     
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin() // Allow semua request
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            .allowed_header(http::header::CONTENT_TYPE)
+            .supports_credentials()
+            .max_age(3600);
         App::new()
             .service(web::scope("/api/v1")
             .service(auth_scope())
@@ -54,15 +62,16 @@ async fn main() -> std::io::Result<()> {
         .default_service(route().to(generic_service::GenericService::not_found))
         .wrap(middleware::Logger::default()) // Logging middleware
         .wrap(IdentityMiddleware::default())
-            .wrap(
-                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
-                    .cookie_name("token".to_owned())
-                    .cookie_secure(false)
-                    .session_lifecycle(PersistentSession::default().session_ttl(Duration::days(7)))
-                    .build(),
-            )
-            .wrap(middleware::NormalizePath::trim()) // 🔥 Normalisasi path (opsional)
-            .wrap(middleware::Logger::default())
+        .wrap(
+            SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                .cookie_name("token".to_owned())
+                .cookie_secure(false)
+                .session_lifecycle(PersistentSession::default().session_ttl(Duration::days(7)))
+                .build(),
+        )
+        .wrap(middleware::NormalizePath::trim()) // 🔥 Normalisasi path (opsional)
+        .wrap(middleware::Logger::default())
+        .wrap(cors)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
