@@ -4,7 +4,7 @@ use bb8_tiberius::ConnectionManager;
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use tiberius::QueryStream;
 
-use crate::contexts::{crypto::encrypt_text, model::{ActionResult, LoginRequest, RegisterRequest, WebUser}};
+use crate::contexts::{connection::DbTransaction, crypto::encrypt_text, model::{ActionResult, LoginRequest, RegisterRequest, WebUser}};
 
 pub struct AuthService;
 
@@ -55,19 +55,82 @@ impl AuthService {
         }
     }
 
-    pub async fn register(request: RegisterRequest) -> ActionResult<()> {
+    pub async fn register(
+        pool: web::Data<Pool<ConnectionManager>>,
+        request: RegisterRequest,
+    ) -> ActionResult<()> {
         let mut result = ActionResult::default();
-
-        // Logika validasi (misal cek email kosong)
-        if request.email.is_empty() {
-            result.result = false;
-            result.message = "Invalid Request".to_string();
-            result.error = Some("Email is required".to_string());
-            return result;
+    
+        // Enkripsi password sebelum disimpan
+        let enc_password = encrypt_text(&request.password);
+    
+        // Mulai transaksi
+        match DbTransaction::begin(&pool).await {
+            Ok(trans) => {
+                {
+                    // Scope agar conn_guard di-drop sebelum commit
+                    let mut conn_guard = trans.conn.lock().await;
+                    if let Some(ref mut conn) = *conn_guard {
+                        // Insert ke tabel `AuthUser`
+                        let query1 = conn
+                            .execute(
+                                r#"INSERT INTO AuthUser (AuthUserNID, Email, Handphone, Password, RegisterDate) 
+                                VALUES (@P1, @P2, @P3, @P4, GETUTCDATE())"#,
+                                &[],
+                            )
+                            .await;
+                        if let Err(err) = query1 {
+                            result.error = format!("Failed to insert AuthUser: {:?}", err).into();
+                            return result;
+                        }
+    
+                        // Insert ke tabel `CIFRequest`
+                        let query2 = conn
+                            .execute(
+                                r#"INSERT INTO CIFRequest (CIFRequestNID, AuthUserNID, Status, CreatedAt) 
+                                VALUES (@P1, @P2, 'Pending', GETUTCDATE())"#,
+                                &[],
+                            )
+                            .await;
+                        if let Err(err) = query2 {
+                            result.error = format!("Failed to insert CIFRequest: {:?}", err).into();
+                            return result;
+                        }
+    
+                        // Insert ke tabel `UserKyc`
+                        let query3 = conn
+                            .execute(
+                                r#"INSERT INTO UserKyc (UserKycNID, AuthUserNID, VerificationStatus, UpdatedAt) 
+                                VALUES (@P1, @P2, 'Unverified', GETUTCDATE())"#,
+                                &[],
+                            )
+                            .await;
+                        if let Err(err) = query3 {
+                            result.error = format!("Failed to insert UserKyc: {:?}", err).into();
+                            return result;
+                        }
+                    } else {
+                        result.error = format!("Failed to get database connection").into();
+                        return result;
+                    }
+                } // 🔥 `conn_guard` keluar dari scope dan otomatis di-drop
+    
+                // Commit transaksi setelah semua query berhasil
+                if let Err(err) = trans.commit().await {
+                    result.error = format!("Failed to commit transaction: {:?}", err).into();
+                    return result;
+                }
+    
+                result.result = true;
+                result.message = "User registered successfully".to_string();
+            }
+            Err(err) => {
+                result.error = format!("Failed to start transaction: {:?}", err).into();
+            }
         }
-
-        result.result = true;
-        result.message = "Register successfully".to_string();
+    
         result
     }
+       
+    
 }

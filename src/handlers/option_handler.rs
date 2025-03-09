@@ -15,28 +15,76 @@ pub fn option_scope() -> Scope {
         .service(get_sub_district)
         .service(get_sales)
         .service(get_income)
+        .service(get_education)
+        .service(get_maritalstatus)
+        .service(get_gender)
+        .service(get_religion)
+        .service(get_fund_source)
+        .service(get_residence_status)
+        .service(get_beneficiary)
+        .service(get_investment_objective)
+        .service(get_risk)
+        .service(get_question_npwp)
+        .service(get_occupation)
+        .service(get_position)
+        .service(get_bank)
+        .service(get_nature_bussiness)
+        .service(get_spouse_relationship)
+        .service(get_spouse_occupation)
+        .service(get_spouse_position)
+        .service(get_spouse_nature_bussiness)
+        .service(get_bank_rdn)
+        .service(get_category)
 }
 
 #[get("/nationality")]
-pub async fn get_nationality(pool: web::Data<Pool<ConnectionManager>>) -> impl Responder {
+pub async fn get_nationality(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let result: ActionResult<Vec<ListData>> = OptionService::get_nationality(pool).await;
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match result {
-        response if response.error.is_some() => {
-            HttpResponse::InternalServerError().json(response)
-        }, 
-        response if response.result => {
-            HttpResponse::Ok().json(response)
-        }, 
-        response => {
-            HttpResponse::BadRequest().json(response)
-        }
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_nationality(pool).await;
+
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => {
+                            HttpResponse::Ok().json(response)
+                        }, 
+                        response => {
+                            HttpResponse::BadRequest().json(response)
+                        }
+                    }
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
     }
+    
 }
 
 #[get("/city/{city}")]
-pub async fn get_city(pool: web::Data<Pool<ConnectionManager>>, city: web::Path<String>) -> impl Responder {
+pub async fn get_city(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>, city: web::Path<String>) -> impl Responder {
 
     let params: String = city.into_inner();
 
@@ -49,55 +97,100 @@ pub async fn get_city(pool: web::Data<Pool<ConnectionManager>>, city: web::Path<
         }));
     }
 
-    let result: ActionResult<Vec<ListData>> = OptionService::get_city(pool, params.to_string()).await;
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match result {
-        response if response.error.is_some() => {
-            HttpResponse::InternalServerError().json(response)
-        }, 
-        response if response.result => {
-            HttpResponse::Ok().json(response)
-        }, 
-        response => {
-            HttpResponse::BadRequest().json(response)
-        }
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_city(pool, params.to_string()).await;
+
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => {
+                            HttpResponse::Ok().json(response)
+                        }, 
+                        response => {
+                            HttpResponse::BadRequest().json(response)
+                        }
+                    }
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
     }
 }
 
 #[get("/district/{city_id}")]
-pub async fn get_district(pool: web::Data<Pool<ConnectionManager>>, city_id: web::Path<String>) -> impl Responder {
+pub async fn get_district(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>, city_id: web::Path<String>) -> impl Responder {
 
     let params: i32 = match GenericService::parse_param(&city_id.into_inner()) {
         Ok(value) => value,
         Err(response) => return response,
     };
 
-    // Cek apakah parameter kosong atau hanya spasi
-    if params == 0 {
-        return HttpResponse::BadRequest().json(json!({
-            "result": false,
-            "message": "Bad Request",
-            "error": "City id is empty"
-        }));
-    }
+    let mut result: ActionResult<Vec<HashMap<String, String>>> = ActionResult::default();
 
-    let result: ActionResult<Vec<HashMap<String, String>>> = OptionService::get_district(pool, params).await;
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
 
-    match result {
-        response if response.error.is_some() => {
-            HttpResponse::InternalServerError().json(response)
-        }, 
-        response if response.result => {
-            HttpResponse::Ok().json(response)
-        }, 
-        response => {
-            HttpResponse::BadRequest().json(response)
-        }
+                    let data: ActionResult<Vec<HashMap<String, String>>> = OptionService::get_district(pool, params).await;
+
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => {
+                            HttpResponse::Ok().json(response)
+                        }, 
+                        response => {
+                            HttpResponse::BadRequest().json(response)
+                        }
+                    }
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
     }
 }
 
 #[get("/subdistrict/{district}")]
-pub async fn get_sub_district(pool: web::Data<Pool<ConnectionManager>>, district: web::Path<String>) -> impl Responder {
+pub async fn get_sub_district(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>, district: web::Path<String>) -> impl Responder {
 
     let params: String = district.into_inner();
 
@@ -110,18 +203,45 @@ pub async fn get_sub_district(pool: web::Data<Pool<ConnectionManager>>, district
         }));
     }
 
-    let result: ActionResult<Vec<ListData>> = OptionService::get_sub_district(pool, params.to_string()).await;
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match result {
-        response if response.error.is_some() => {
-            HttpResponse::InternalServerError().json(response)
-        }, 
-        response if response.result => {
-            HttpResponse::Ok().json(response)
-        }, 
-        response => {
-            HttpResponse::BadRequest().json(response)
-        }
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_sub_district(pool, params.to_string()).await;
+
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => {
+                            HttpResponse::Ok().json(response)
+                        }, 
+                        response => {
+                            HttpResponse::BadRequest().json(response)
+                        }
+                    }
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
     }
 }
 
@@ -143,12 +263,94 @@ pub async fn get_sales(pool: web::Data<Pool<ConnectionManager>>) -> impl Respond
     }
 }
 
+#[get("/bank")]
+pub async fn get_bank(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
+
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_bank(pool).await;
+
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => {
+                            HttpResponse::Ok().json(response)
+                        }, 
+                        response => {
+                            HttpResponse::BadRequest().json(response)
+                        }
+                    }
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
+    }
+}
+
+#[get("/npwp")]
+pub async fn get_question_npwp(session: Option<Identity>) -> impl Responder {
+
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_question_npwp().await;
+                    
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+
+                    HttpResponse::Ok().json(result)
+                    
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
+    }
+}
+
 #[get("/income")]
-pub async fn get_income(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_income(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -191,11 +393,11 @@ pub async fn get_income(pool: web::Data<Pool<ConnectionManager>>, identity: Opti
 }
 
 #[get("/education")]
-pub async fn get_education(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_education(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -238,11 +440,11 @@ pub async fn get_education(pool: web::Data<Pool<ConnectionManager>>, identity: O
 }
 
 #[get("/maritalstatus")]
-pub async fn get_maritalstatus(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_maritalstatus(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -285,11 +487,11 @@ pub async fn get_maritalstatus(pool: web::Data<Pool<ConnectionManager>>, identit
 }
 
 #[get("/gender")]
-pub async fn get_gender(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_gender(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -332,11 +534,11 @@ pub async fn get_gender(pool: web::Data<Pool<ConnectionManager>>, identity: Opti
 }
 
 #[get("/religion")]
-pub async fn get_religion(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_religion(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -379,11 +581,11 @@ pub async fn get_religion(pool: web::Data<Pool<ConnectionManager>>, identity: Op
 }
 
 #[get("/fundsource")]
-pub async fn get_fundsource(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_fund_source(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -425,12 +627,12 @@ pub async fn get_fundsource(pool: web::Data<Pool<ConnectionManager>>, identity: 
     }
 }
 
-#[get("/residencystatus")]
-pub async fn get_residency_status(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+#[get("/residencestatus")]
+pub async fn get_residence_status(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -473,11 +675,11 @@ pub async fn get_residency_status(pool: web::Data<Pool<ConnectionManager>>, iden
 }
 
 #[get("/beneficiary")]
-pub async fn get_beneficiary(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_beneficiary(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -520,11 +722,11 @@ pub async fn get_beneficiary(pool: web::Data<Pool<ConnectionManager>>, identity:
 }
 
 #[get("/investmentobjective")]
-pub async fn get_investment_objective(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_investment_objective(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -567,11 +769,11 @@ pub async fn get_investment_objective(pool: web::Data<Pool<ConnectionManager>>, 
 }
 
 #[get("/risk")]
-pub async fn get_risk(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_risk(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -613,12 +815,12 @@ pub async fn get_risk(pool: web::Data<Pool<ConnectionManager>>, identity: Option
     }
 }
 
-#[get("/spouse-relationship")]
-pub async fn get_spouse_relationship(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+#[get("/occupation")]
+pub async fn get_occupation(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -627,7 +829,165 @@ pub async fn get_spouse_relationship(pool: web::Data<Pool<ConnectionManager>>, i
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "SpouseRelationship".to_string()).await;
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_occupation(pool).await;
+                    
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => {
+                            HttpResponse::Ok().json(response)
+                        }, 
+                        response => {
+                            HttpResponse::BadRequest().json(response)
+                        }
+                    }
+                    
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
+    }
+}
+
+#[get("/position/{occupation_id}")]
+pub async fn get_position(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>, occupation_id: web::Path<String>) -> impl Responder {
+
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+
+    let params: i32 = match GenericService::parse_param(&occupation_id.into_inner()) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_position(pool, params).await;
+                    
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => {
+                            HttpResponse::Ok().json(response)
+                        }, 
+                        response => {
+                            HttpResponse::BadRequest().json(response)
+                        }
+                    }
+                    
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
+    }
+}
+
+#[get("/naturebusiness/{occupation_id}/{position_id}")]
+pub async fn get_nature_bussiness(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>, params: web::Path<(String, String)>) -> impl Responder {
+
+    let mut result = ActionResult::default();
+
+    let (occupation_id, position_id) = params.into_inner();
+
+    let params1: i32 = match GenericService::parse_param(&occupation_id) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+
+    let params2: i32 = match GenericService::parse_param(&position_id) {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_nature_bussiness(pool, params1, params2).await;
+                    
+                    result.result = data.result;
+                    result.message = data.message;
+                    result.data = data.data;
+                    result.error = data.error;
+
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => {
+                            HttpResponse::Ok().json(response)
+                        }, 
+                        response => {
+                            HttpResponse::BadRequest().json(response)
+                        }
+                    }
+                    
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
+    }
+}
+
+#[get("/spouse-relationship")]
+pub async fn get_spouse_relationship(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
+
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_api_lookup_data(pool, "SpouseRelationship".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -661,11 +1021,11 @@ pub async fn get_spouse_relationship(pool: web::Data<Pool<ConnectionManager>>, i
 }
 
 #[get("/spouse-occupation")]
-pub async fn get_spouse_occupation(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_spouse_occupation(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -674,7 +1034,7 @@ pub async fn get_spouse_occupation(pool: web::Data<Pool<ConnectionManager>>, ide
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "Occupation".to_string()).await;
+                    let data: ActionResult<Vec<ListData>> = OptionService::get_api_lookup_data(pool, "SpouseOccupation".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -708,11 +1068,11 @@ pub async fn get_spouse_occupation(pool: web::Data<Pool<ConnectionManager>>, ide
 }
 
 #[get("/spouse-position")]
-pub async fn get_spouse_position(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_spouse_position(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -755,11 +1115,11 @@ pub async fn get_spouse_position(pool: web::Data<Pool<ConnectionManager>>, ident
 }
 
 #[get("/spouse-naturebusiness")]
-pub async fn get_spouse_naturebusiness(pool: web::Data<Pool<ConnectionManager>>, identity: Option<Identity>) -> impl Responder {
+pub async fn get_spouse_nature_bussiness(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
 
-    match identity.map(|id| id.id()) {
+    match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
             return HttpResponse::Unauthorized().json(result);
@@ -804,7 +1164,7 @@ pub async fn get_spouse_naturebusiness(pool: web::Data<Pool<ConnectionManager>>,
 #[get("/bank-rdn")]
 pub async fn get_bank_rdn(pool: web::Data<Pool<ConnectionManager>>) -> impl Responder {
 
-    let result: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "QuestionRDN".to_string()).await;
+    let result: ActionResult<Vec<ListData>> = OptionService::get_api_lookup_data(pool, "QuestionRDN".to_string()).await;
 
     match result {
         response if response.error.is_some() => {
@@ -822,7 +1182,7 @@ pub async fn get_bank_rdn(pool: web::Data<Pool<ConnectionManager>>) -> impl Resp
 #[get("/category")]
 pub async fn get_category(pool: web::Data<Pool<ConnectionManager>>) -> impl Responder {
 
-    let result: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "ClientNCategory".to_string()).await;
+    let result: ActionResult<Vec<ListData>> = OptionService::get_api_lookup_data(pool, "ClientNCategory".to_string()).await;
 
     match result {
         response if response.error.is_some() => {

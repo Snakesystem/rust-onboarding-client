@@ -86,8 +86,8 @@ async fn check_session(identity: Option<Identity>) -> impl Responder {
 
 
 #[post("/register")]
-async fn register(request: web::Json<RegisterRequest>) -> impl Responder {
-    match AuthService::register(request.into_inner()).await {
+async fn register(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<RegisterRequest>) -> impl Responder {
+    match AuthService::register(pool,request.into_inner()).await {
         result if result.result => HttpResponse::Ok().json(result),
         result => HttpResponse::BadRequest().json(result),
     }
