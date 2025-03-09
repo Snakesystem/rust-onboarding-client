@@ -6,6 +6,8 @@ use tiberius::QueryStream;
 
 use crate::contexts::{connection::DbTransaction, crypto::encrypt_text, model::{ActionResult, LoginRequest, RegisterRequest, WebUser}};
 
+use super::generic_service::GenericService;
+
 pub struct AuthService;
 
 impl AuthService {
@@ -71,44 +73,93 @@ impl AuthService {
                     // Scope agar conn_guard di-drop sebelum commit
                     let mut conn_guard = trans.conn.lock().await;
                     if let Some(ref mut conn) = *conn_guard {
-                        // Insert ke tabel `AuthUser`
-                        let query1 = conn
+
+                        let exist_user = conn.query("SELECT Email FROM [UserKyc] WHERE Email = @P1", &[&request.email]).await.iter().clone().count();
+
+                        if exist_user > 0 {
+                            result.error = format!("Email already exists").into();
+                            return result;
+                        } else { 
+                            let query1 = conn
                             .execute(
-                                r#"INSERT INTO AuthUser (AuthUserNID, Email, Handphone, Password, RegisterDate) 
-                                VALUES (@P1, @P2, @P3, @P4, GETUTCDATE())"#,
-                                &[],
+                                r#"INSERT INTO [dbo].[UserKyc]
+                                  ([Email],[MobilePhone],[Fullname],[BankAccountNumber],[BankAccountHolder],[QuestionRDN],[Sales],[BankName],[Stage],
+                                  [CIFNID],[ChangeNID],[PendingCIFNID],[IsRejected],[IsFinished],[IsRevised],[IsImported],[SaveTime],[LastUpdate],[SaveIpAddress])
+                                  VALUES
+                                  (@Email,@MobilePhone,@Fullname,@BankAccountNumber,@BankAccountHolder,@QuestionRDN,@Sales,@BankName,@Stage,
+                                  @CIFNID,@ChangeNID,@PendingCIFNID,@IsRejected,@IsFinished,@IsRevised,@IsImported,@SaveTime,@LastUpdate,@SaveIpAddress)"#,
+                                &[
+                                    &request.email,
+                                    &request.mobile_phone,
+                                    &request.fullname,
+                                    &request.bank_account_number,
+                                    &request.bank_account_holder,
+                                    &request.question_rdn,
+                                    &request.sales,
+                                    &request.bank_name,
+                                    &1i32,
+                                    &0i32,
+                                    &0i32,
+                                    &0i32,
+                                    &false,
+                                    &false,
+                                    &false,
+                                    &false,
+                                    &chrono::Utc::now(),
+                                    &chrono::Utc::now(),
+                                    &"127.0.0.1",
+                                ],
                             )
                             .await;
-                        if let Err(err) = query1 {
-                            result.error = format!("Failed to insert AuthUser: {:?}", err).into();
-                            return result;
+                            if let Err(err) = query1 {
+                                result.error = format!("Failed to insert User kyc: {:?}", err).into();
+                                return result;
+                            }
+                            
+                            let user_kyc = conn.query("SELECT AutoNID FROM [UserKyc] WHERE Email = @P1", &[&request.email]).await.iter().clone();
+                            // let user_kyc = match user_kyc.try_next().await {
+                            //     Some(row) => row.get("AutoNID").unwrap_or(0),
+                            //     None => 0,
+                            // }
+                            // Insert ke tabel `CIFRequest`
+                            let query2 = conn
+                                .execute(
+                                    r#"INSERT INTO [dbo].[AuthUser]
+                                      ([WebCIFNID],[Email],[Handphone],[ActivateCode],[Password],[RegisterDate],[disableLogin],[OTPGeneratedLink],[OTPGeneratedLinkDate],[Picture],[Sub])
+                                      VALUES
+                                      (@WebCIFNID,@Email,@Handphone,@ActivateCode,@Password,@RegisterDate,@disablelogin,@OTPGeneratedLink,@OTPGeneratedLinkDate,@Picture,@SubOAuthID)"#,
+                                    &[
+                                        &0i32,
+                                        &request.email,
+                                        &request.mobile_phone,
+                                        &"",
+                                        &enc_password,
+                                        &chrono::Utc::now(),
+                                        &true,
+                                        &GenericService::random_string(20),
+                                        &chrono::Utc::now(),
+                                        &"",
+                                        &""
+                                    ],
+                                )
+                                .await;
+                            if let Err(err) = query2 {
+                                result.error = format!("Failed to insert AuthUser: {:?}", err).into();
+                                return result;
+                            }
+        
+                            // Insert ke tabel `UserKyc`
+                            let query3 = conn
+                                .execute(r#"INSERT INTO [dbo].[CIFRequest] ([WebCIFNID]) VALUES (@WebCIFNID)"#,
+                                    &[],
+                                )
+                                .await;
+                            if let Err(err) = query3 {
+                                result.error = format!("Failed to insert UserKyc: {:?}", err).into();
+                                return result;
+                            }
                         }
-    
-                        // Insert ke tabel `CIFRequest`
-                        let query2 = conn
-                            .execute(
-                                r#"INSERT INTO CIFRequest (CIFRequestNID, AuthUserNID, Status, CreatedAt) 
-                                VALUES (@P1, @P2, 'Pending', GETUTCDATE())"#,
-                                &[],
-                            )
-                            .await;
-                        if let Err(err) = query2 {
-                            result.error = format!("Failed to insert CIFRequest: {:?}", err).into();
-                            return result;
-                        }
-    
-                        // Insert ke tabel `UserKyc`
-                        let query3 = conn
-                            .execute(
-                                r#"INSERT INTO UserKyc (UserKycNID, AuthUserNID, VerificationStatus, UpdatedAt) 
-                                VALUES (@P1, @P2, 'Unverified', GETUTCDATE())"#,
-                                &[],
-                            )
-                            .await;
-                        if let Err(err) = query3 {
-                            result.error = format!("Failed to insert UserKyc: {:?}", err).into();
-                            return result;
-                        }
+                        
                     } else {
                         result.error = format!("Failed to get database connection").into();
                         return result;
