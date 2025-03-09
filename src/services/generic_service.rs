@@ -3,6 +3,7 @@ use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use serde_json::json;
 use tiberius::QueryStream;
+use rand::{rng, Rng};
 
 use crate::contexts::model::{ActionResult, Company};
 
@@ -76,6 +77,18 @@ impl GenericService {
                 "error": format!("Invalid parameter '{}'. Please provide a valid {}", param, std::any::type_name::<T>())
             }))
         })
+    }
+
+    pub fn random_string(length: usize) -> String {
+        const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let mut rng = rng();
+    
+        (0..length)
+            .map(|_| {
+                let idx = rng.gen_range(0..CHARS.len());
+                CHARS[idx] as char
+            })
+            .collect()
     }
 
 }
