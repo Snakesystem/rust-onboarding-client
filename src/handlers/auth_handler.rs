@@ -14,7 +14,7 @@ pub fn auth_scope() -> Scope {
 }
 
 #[post("/login")]
-async fn login(req: HttpRequest,pool: web::Data<Pool<ConnectionManager>>, request: web::Json<LoginRequest>) -> impl Responder {
+async fn login(req: HttpRequest, pool: web::Data<Pool<ConnectionManager>>, request: web::Json<LoginRequest>) -> impl Responder {
 
     let result: ActionResult<WebUser> = AuthService::login(pool, request.into_inner()).await;
 

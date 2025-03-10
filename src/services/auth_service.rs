@@ -57,10 +57,7 @@ impl AuthService {
         }
     }
 
-    pub async fn register(
-        pool: web::Data<Pool<ConnectionManager>>,
-        request: RegisterRequest,
-    ) -> ActionResult<()> {
+    pub async fn register(pool: web::Data<Pool<ConnectionManager>>, request: RegisterRequest) -> ActionResult<()> {
         let mut result = ActionResult::default();
     
         // Enkripsi password sebelum disimpan
