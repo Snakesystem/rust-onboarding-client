@@ -1,5 +1,5 @@
 use actix_identity::Identity;
-use actix_web::{cookie::{Cookie, SameSite}, get, post, web, HttpMessage, HttpRequest, HttpResponse, Responder, Scope};
+use actix_web::{cookie::{time, Cookie, SameSite}, get, post, web, HttpMessage, HttpRequest, HttpResponse, Responder, Scope};
 use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use crate::{contexts::{jwt_session::{create_jwt, validate_jwt}, logger::write_log, model::{ActionResult, LoginRequest, RegisterRequest, WebUser}}, services::auth_service::AuthService};
@@ -10,6 +10,7 @@ pub fn auth_scope() -> Scope {
         .service(login)
         .service(register)
         .service(check_session)
+        .service(logout)
 }
 
 #[post("/login")]
@@ -84,6 +85,28 @@ async fn check_session(identity: Option<Identity>) -> impl Responder {
     };
 }
 
+#[post("/logout")]
+async fn logout(id: Identity) -> impl Responder {
+    // Hapus sesi dari actix-identity
+    
+    id.logout();
+
+    // Hapus cookie dengan setting expired date
+    let cookie = Cookie::build("token", "")
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Strict)
+        .secure(false) // Ubah ke true jika pakai HTTPS
+        .max_age(time::Duration::days(-1)) // Set expired
+        .finish();
+
+    HttpResponse::Ok()
+        .cookie(cookie) // Hapus cookie dengan expired
+        .json(serde_json::json!({
+            "result": true,
+            "message": "Logout successful, cookie deleted"
+        }))
+}
 
 #[post("/register")]
 async fn register(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<RegisterRequest>) -> impl Responder {
