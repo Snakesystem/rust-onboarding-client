@@ -34,15 +34,16 @@ impl<'a> DbTransaction<'a> {
 impl<'a> Drop for DbTransaction<'a> {
     fn drop(&mut self) {
         if !self.committed {
-            // Ambil kunci secara langsung tanpa `tokio::spawn()`
-            let mut conn_guard = self.conn.blocking_lock();
-            if let Some(mut conn) = conn_guard.take() {
-                // Rollback transaksi langsung dalam thread ini
-                let runtime = tokio::runtime::Runtime::new().unwrap();
-                let _ = runtime.block_on(async {
+            let conn_fut = async {
+                let mut conn_guard = self.conn.lock().await;
+                if let Some(mut conn) = conn_guard.take() {
                     let _ = conn.simple_query("ROLLBACK").await;
-                });
-            }
+                }
+            };
+
+            // Buat runtime lokal hanya untuk eksekusi rollback
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(conn_fut);
         }
     }
 }

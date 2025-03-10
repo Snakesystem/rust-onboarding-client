@@ -20,16 +20,16 @@ pub struct LoginRequest {
 pub struct RegisterRequest {
     pub email: String,
     pub password: String,
-    pub mobile_phone: i32,
+    pub mobile_phone: i64,
     pub fullname: String,
-    pub bank_account_number: i32,
+    pub bank_account_number: i64,
     pub bank_name: String,
     pub bank_account_holder: String,
     pub question_rdn: i32,
     #[serde(default)]
     pub sales: i32,
     #[serde(default)]
-    pub referal: i16,
+    pub referal: String,
     pub client_category: u8
 }
 

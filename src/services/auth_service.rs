@@ -3,7 +3,6 @@ use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use tiberius::QueryStream;
-
 use crate::contexts::{connection::DbTransaction, crypto::encrypt_text, model::{ActionResult, LoginRequest, RegisterRequest, WebUser}};
 
 use super::generic_service::GenericService;
@@ -57,128 +56,120 @@ impl AuthService {
         }
     }
 
+
     pub async fn register(pool: web::Data<Pool<ConnectionManager>>, request: RegisterRequest) -> ActionResult<()> {
-        let mut result = ActionResult::default();
-    
-        // Enkripsi password sebelum disimpan
+        println!("🟢 Masuk ke AuthService::register"); // ✅ Tambahkan log di awal
+        
+        let mut result: ActionResult<()> = ActionResult::default();
         let enc_password = encrypt_text(&request.password);
-    
-        // Mulai transaksi
+
         match DbTransaction::begin(&pool).await {
             Ok(trans) => {
-                {
-                    // Scope agar conn_guard di-drop sebelum commit
-                    let mut conn_guard = trans.conn.lock().await;
-                    if let Some(ref mut conn) = *conn_guard {
+                let auto_nid: i32;
 
-                        let exist_user = conn.query("SELECT Email FROM [UserKyc] WHERE Email = @P1", &[&request.email]).await.iter().clone().count();
-
-                        if exist_user > 0 {
-                            result.error = format!("Email already exists").into();
-                            return result;
-                        } else { 
-                            let query1 = conn
-                            .execute(
-                                r#"INSERT INTO [dbo].[UserKyc]
-                                  ([Email],[MobilePhone],[Fullname],[BankAccountNumber],[BankAccountHolder],[QuestionRDN],[Sales],[BankName],[Stage],
-                                  [CIFNID],[ChangeNID],[PendingCIFNID],[IsRejected],[IsFinished],[IsRevised],[IsImported],[SaveTime],[LastUpdate],[SaveIpAddress])
-                                  VALUES
-                                  (@Email,@MobilePhone,@Fullname,@BankAccountNumber,@BankAccountHolder,@QuestionRDN,@Sales,@BankName,@Stage,
-                                  @CIFNID,@ChangeNID,@PendingCIFNID,@IsRejected,@IsFinished,@IsRevised,@IsImported,@SaveTime,@LastUpdate,@SaveIpAddress)"#,
-                                &[
-                                    &request.email,
-                                    &request.mobile_phone,
-                                    &request.fullname,
-                                    &request.bank_account_number,
-                                    &request.bank_account_holder,
-                                    &request.question_rdn,
-                                    &request.sales,
-                                    &request.bank_name,
-                                    &1i32,
-                                    &0i32,
-                                    &0i32,
-                                    &0i32,
-                                    &false,
-                                    &false,
-                                    &false,
-                                    &false,
-                                    &chrono::Utc::now(),
-                                    &chrono::Utc::now(),
-                                    &"127.0.0.1",
-                                ],
-                            )
-                            .await;
-                            if let Err(err) = query1 {
-                                result.error = format!("Failed to insert User kyc: {:?}", err).into();
-                                return result;
+                // 🔴 Scope pertama: Insert ke UserKyc
+                match trans.conn.lock().await.as_mut() {
+                    Some(conn) => {
+                        println!("🔵 Eksekusi INSERT UserKyc..."); // ✅ Tambahkan log
+                        match conn.query(
+                            r#"INSERT INTO [dbo].[UserKyc] 
+                            ([Email],[MobilePhone],[Fullname],[BankAccountNumber],[BankAccountHolder],
+                            [QuestionRDN],[Sales],[BankName],[Stage],[CIFNID],[ChangeNID],[PendingCIFNID],
+                            [IsRejected],[IsFinished],[IsRevised],[IsImported],[SaveTime],[LastUpdate],[SaveIpAddress])
+                            OUTPUT INSERTED.AutoNID
+                            VALUES
+                            (@P1,@P2,@P3,@P4,@P5,@P6,@P7,@P8,@P9,@P10,@P11,@P12,@P13,@P14,@P15,@P16,@P17,@P18,@P19)"#,
+                            &[
+                                &request.email, &request.mobile_phone, &request.fullname,
+                                &request.bank_account_number, &request.bank_account_holder,
+                                &request.question_rdn, &request.sales, &request.bank_name,
+                                &1i32, &0i32, &0i32, &0i32, &false, &false, &false, &false,
+                                &chrono::Utc::now(), &chrono::Utc::now(), &"127.0.0.1",
+                            ],
+                        ).await {
+                            Ok(rows) => {
+                                auto_nid = match rows.into_row().await {
+                                    Ok(Some(row)) => row.get("AutoNID").unwrap_or(0),
+                                    _ => {
+                                        result.error = Some("Failed to get AutoNID from UserKyc".into());
+                                        return result;
+                                    }
+                                };
                             }
-                            
-                            let user_kyc = conn.query("SELECT AutoNID FROM [UserKyc] WHERE Email = @P1", &[&request.email]).await.iter().clone();
-                            // let user_kyc = match user_kyc.try_next().await {
-                            //     Some(row) => row.get("AutoNID").unwrap_or(0),
-                            //     None => 0,
-                            // }
-                            // Insert ke tabel `CIFRequest`
-                            let query2 = conn
-                                .execute(
-                                    r#"INSERT INTO [dbo].[AuthUser]
-                                      ([WebCIFNID],[Email],[Handphone],[ActivateCode],[Password],[RegisterDate],[disableLogin],[OTPGeneratedLink],[OTPGeneratedLinkDate],[Picture],[Sub])
-                                      VALUES
-                                      (@WebCIFNID,@Email,@Handphone,@ActivateCode,@Password,@RegisterDate,@disablelogin,@OTPGeneratedLink,@OTPGeneratedLinkDate,@Picture,@SubOAuthID)"#,
-                                    &[
-                                        &0i32,
-                                        &request.email,
-                                        &request.mobile_phone,
-                                        &"",
-                                        &enc_password,
-                                        &chrono::Utc::now(),
-                                        &true,
-                                        &GenericService::random_string(20),
-                                        &chrono::Utc::now(),
-                                        &"",
-                                        &""
-                                    ],
-                                )
-                                .await;
-                            if let Err(err) = query2 {
-                                result.error = format!("Failed to insert AuthUser: {:?}", err).into();
-                                return result;
-                            }
-        
-                            // Insert ke tabel `UserKyc`
-                            let query3 = conn
-                                .execute(r#"INSERT INTO [dbo].[CIFRequest] ([WebCIFNID]) VALUES (@WebCIFNID)"#,
-                                    &[],
-                                )
-                                .await;
-                            if let Err(err) = query3 {
-                                result.error = format!("Failed to insert UserKyc: {:?}", err).into();
+                            Err(err) => {
+                                result.error = Some(format!("Failed to insert UserKyc: {:?}", err));
+                                println!("❌ Query execution failed 1: {:?}", result.error);
                                 return result;
                             }
                         }
-                        
-                    } else {
-                        result.error = format!("Failed to get database connection").into();
+                    }
+                    None => {
+                        result.error = Some("Failed to get connection from pool".into());
                         return result;
                     }
-                } // 🔥 `conn_guard` keluar dari scope dan otomatis di-drop
-    
-                // Commit transaksi setelah semua query berhasil
+                }
+
+                // 🔴 Scope kedua: Insert ke AuthUser
+                match trans.conn.lock().await.as_mut() {
+                    Some(conn) => {
+                        println!("🔵 Eksekusi INSERT AuthUser..."); // ✅ Tambahkan log
+                        if let Err(err) = conn.execute(
+                            r#"INSERT INTO [dbo].[AuthUser] 
+                            ([WebCIFNID],[Email],[Handphone],[ActivateCode],[Password],[RegisterDate],
+                            [disableLogin],[OTPGeneratedLink],[OTPGeneratedLinkDate],[Picture],[Sub], [ClientNCategory])
+                            VALUES (@P1,@P2,@P3,@P4,@P5,@P6,@P7,@P8,@P9,@P10,@P11,@P12)"#,
+                            &[
+                                &auto_nid, &request.email, &request.mobile_phone, &"",
+                                &enc_password, &chrono::Utc::now(), &true,
+                                &GenericService::random_string(20), &chrono::Utc::now(),
+                                &"", &"", &request.client_category,
+                            ],
+                        ).await {
+                            result.error = Some(format!("Failed to insert AuthUser: {:?}", err));
+                            return result;
+                        }
+                    }
+                    None => {
+                        result.error = Some("Failed to get database connection".into());
+                        return result;
+                    }
+                }
+
+                // 🔴 Scope ketiga: Insert ke TableRequest
+                match trans.conn.lock().await.as_mut() {
+                    Some(conn) => {
+                        println!("🔵 Eksekusi INSERT TableRequest..."); // ✅ Tambahkan log
+                        if let Err(err) = conn.execute(
+                            r#"INSERT INTO [dbo].[TableRequest] ([WebCIFNID], [Referal]) VALUES (@P1, @P2)"#,
+                            &[&auto_nid, &request.referal],
+                        ).await {
+                            result.error = Some(format!("Failed to insert TableRequest: {:?}", err));
+                            return result;
+                        }
+                    }
+                    None => {
+                        result.error = Some("Failed to get database connection".into());
+                        return result;
+                    }
+                }
+
+                // 🔵 Commit transaksi
+                println!("🔵 Commit transaksi...");
                 if let Err(err) = trans.commit().await {
-                    result.error = format!("Failed to commit transaction: {:?}", err).into();
+                    result.error = Some(format!("Failed to commit transaction: {:?}", err));
                     return result;
                 }
-    
+
                 result.result = true;
                 result.message = "User registered successfully".to_string();
             }
             Err(err) => {
-                result.error = format!("Failed to start transaction: {:?}", err).into();
+                result.error = Some(format!("Failed to start transaction: {:?}", err));
             }
         }
-    
-        result
+
+        println!("✅ Selesai AuthService::register, hasil: {:?}", result); // ✅ Tambahkan log
+        return result;
     }
-       
-    
+    // println!("❌ Query execution failed 3: {:?}", result);
 }

@@ -110,9 +110,18 @@ async fn logout(id: Identity) -> impl Responder {
 
 #[post("/register")]
 async fn register(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<RegisterRequest>) -> impl Responder {
-    match AuthService::register(pool,request.into_inner()).await {
-        result if result.result => HttpResponse::Ok().json(result),
-        result => HttpResponse::BadRequest().json(result),
+
+    let result: ActionResult<()> = AuthService::register(pool, request.into_inner()).await;
+
+    println!("🚀 Result: {:#?}", result);
+
+    match result {
+        response if response.error.is_some() => {
+            println!("🚀 Result: {:#?}", response);
+            HttpResponse::InternalServerError().json(response)
+        }, // Jika error, HTTP 500
+        response if response.result => HttpResponse::Ok().json(response), // Jika berhasil, HTTP 200
+        response => HttpResponse::BadRequest().json(response), // Jika gagal, HTTP 400
     }
 }
 
