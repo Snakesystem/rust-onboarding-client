@@ -5,7 +5,10 @@ use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use serde_json::json;
 
-use crate::{contexts::{jwt_session::validate_jwt, model::{ActionResult, ListData}}, services::{generic_service::GenericService, option_service::OptionService}};
+use crate::{
+    contexts::{jwt_session::validate_jwt, model::{ActionResult, ListData}}, 
+    services::{generic_service::GenericService, option_service::OptionService}
+};
 
 pub fn option_scope() -> Scope {
     web::scope("/option")

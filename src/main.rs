@@ -1,11 +1,11 @@
 use actix_cors::Cors;
 use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{ cookie::{time::Duration, Key}, get, http, middleware, web::{self, route}, App, HttpServer};
+use actix_web::{ cookie::{time::Duration, Key}, get, http::{self}, middleware::{self}, web::{self, route}, App, HttpServer};
 use contexts::{connection::create_pool, logger::write_log};
 use handlers::{auth_handler::auth_scope, generic_handler::generic_scope, option_handler::option_scope};
 use log::info;
-use services::generic_service;
+use services::generic_service::{self};
 
 mod contexts {
     pub mod connection;

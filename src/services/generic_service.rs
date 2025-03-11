@@ -1,4 +1,4 @@
-use actix_web::{error, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{error, web, HttpRequest, HttpResponse, Responder, Result};
 use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use serde_json::json;
@@ -89,6 +89,27 @@ impl GenericService {
                 CHARS[idx] as char
             })
             .collect()
+    }
+
+    pub fn get_ip_address(req: &HttpRequest) -> String {
+        req.headers()
+            .get("X-Forwarded-For") // Jika pakai reverse proxy seperti Nginx
+            .and_then(|ip| ip.to_str().ok())
+            .map_or_else(
+                || req.peer_addr()
+                    .map(|addr| addr.ip().to_string())
+                    .unwrap_or_else(|| "Unknown IP".to_string()),
+                |ip| ip.to_string(),
+            )
+    }
+    
+    // Function untuk ambil User-Agent (Device Info)
+    pub fn get_device_info(req: &HttpRequest) -> String {
+        req.headers()
+            .get("User-Agent")
+            .and_then(|ua| ua.to_str().ok())
+            .unwrap_or("Unknown Device")
+            .to_string()
     }
 
 }

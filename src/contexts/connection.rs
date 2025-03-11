@@ -34,16 +34,12 @@ impl<'a> DbTransaction<'a> {
 impl<'a> Drop for DbTransaction<'a> {
     fn drop(&mut self) {
         if !self.committed {
-            let conn_fut = async {
-                let mut conn_guard = self.conn.lock().await;
+            if let Ok(mut conn_guard) = self.conn.try_lock() {
                 if let Some(mut conn) = conn_guard.take() {
-                    let _ = conn.simple_query("ROLLBACK").await;
+                    // Eksekusi rollback langsung tanpa async
+                    let _ = conn.simple_query("ROLLBACK");
                 }
-            };
-
-            // Buat runtime lokal hanya untuk eksekusi rollback
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(conn_fut);
+            }
         }
     }
 }

@@ -30,7 +30,9 @@ pub struct RegisterRequest {
     pub sales: i32,
     #[serde(default)]
     pub referal: String,
-    pub client_category: u8
+    pub client_category: u8,
+    #[serde(default)]
+    pub app_ipaddress: String
 }
 
 #[derive(Debug, Serialize)]

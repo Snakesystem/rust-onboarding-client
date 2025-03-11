@@ -2,7 +2,12 @@ use actix_identity::Identity;
 use actix_web::{cookie::{time, Cookie, SameSite}, get, post, web, HttpMessage, HttpRequest, HttpResponse, Responder, Scope};
 use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
-use crate::{contexts::{jwt_session::{create_jwt, validate_jwt}, logger::write_log, model::{ActionResult, LoginRequest, RegisterRequest, WebUser}}, services::auth_service::AuthService};
+use crate::{
+    contexts::{jwt_session::{create_jwt, validate_jwt}, 
+    logger::write_log, 
+    model::{ActionResult, LoginRequest, RegisterRequest, WebUser}}, 
+    services::{auth_service::AuthService, generic_service::GenericService}
+};
 
 pub fn auth_scope() -> Scope {
     
@@ -109,15 +114,14 @@ async fn logout(id: Identity) -> impl Responder {
 }
 
 #[post("/register")]
-async fn register(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<RegisterRequest>) -> impl Responder {
+async fn register(req: HttpRequest, pool: web::Data<Pool<ConnectionManager>>, mut request: web::Json<RegisterRequest>) -> impl Responder {
+
+    request.app_ipaddress = GenericService::get_ip_address(&req);
 
     let result: ActionResult<()> = AuthService::register(pool, request.into_inner()).await;
 
-    println!("🚀 Result: {:#?}", result);
-
     match result {
         response if response.error.is_some() => {
-            println!("🚀 Result: {:#?}", response);
             HttpResponse::InternalServerError().json(response)
         }, // Jika error, HTTP 500
         response if response.result => HttpResponse::Ok().json(response), // Jika berhasil, HTTP 200
