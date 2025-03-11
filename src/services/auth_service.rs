@@ -193,28 +193,55 @@ impl AuthService {
 
         let mut result: ActionResult<()> = ActionResult::default();
 
-        match connection.clone().get().await {
-            Ok(mut conn) => {
-                let query_result: Result<QueryStream, _> = conn.query(
-                    r#"SELECT AuthUserNID, OTPGeneratedLinkDate FROM AuthUser OTPGeneratedLinkDate Email = @P1"#, &[&otp_link]
-                ).await;
-        
-                match query_result {
-                    Ok(mut stream) => {
-                        if stream.next().await.transpose().is_ok() {
-                            println!("Hahahaha")
-                        }
-                    }
-                    Err(err) => {
-                        result.error = Some(format!("Query error: {}", err));
-                        return result;
-                    }
-                }
-            }
+        let mut conn = match connection.get().await {
+            Ok(conn) => conn,
             Err(err) => {
                 result.error = Some(format!("Database connection error: {}", err));
                 return result;
             }
+        };
+    
+        // Eksekusi query
+        let mut stream = match conn.query(
+            r#"SELECT AuthUserNID, OTPGeneratedLinkDate FROM AuthUser WHERE OTPGeneratedLinkDate = @P1"#,
+            &[&otp_link]
+        ).await {
+            Ok(stream) => stream,
+            Err(err) => {
+                result.error = Some(format!("Query error: {}", err));
+                return result;
+            }
+        };
+    
+        // Cek apakah ada hasil dari query
+        if stream.next().await.transpose().is_ok() {
+            // Mulai transaksi database
+            let trans = match DbTransaction::begin(&connection).await {
+                Ok(trans) => trans,
+                Err(err) => {
+                    result.error = Some(format!("Failed to start transaction: {:?}", err));
+                    return result;
+                }
+            };
+    
+            // Kunci koneksi transaksi
+            if let Some(conn) = trans.conn.lock().await.as_mut() {
+                // Eksekusi query insert ke AuthUser
+                if let Err(err) = conn.execute(
+                    r#"UPDATE [dbo].[AuthUser] SET [disableLogin] = 0, ActivateTime = @P2, CountResendActivation = @P3
+                        WHERE OTPGeneratedLink = @P1"#,
+                    &[&otp_link, &chrono::Utc::now(), &1i32],
+                ).await {
+                    result.error = Some(format!("Failed to insert AuthUser: {:?}", err));
+                    return result;
+                }
+            } else {
+                result.error = Some("Failed to get database connection".into());
+                return result;
+            }
+    
+            result.result = true;
+            result.message = "User registered successfully".to_string();
         }
 
         return result;

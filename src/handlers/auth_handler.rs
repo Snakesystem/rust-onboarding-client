@@ -16,6 +16,7 @@ pub fn auth_scope() -> Scope {
         .service(register)
         .service(check_session)
         .service(logout)
+        .service(activation_user)
 }
 
 #[post("/login")]
@@ -129,3 +130,16 @@ async fn register(req: HttpRequest, pool: web::Data<Pool<ConnectionManager>>, mu
     }
 }
 
+#[get("/activation/{otp_link}")]
+async fn activation_user(pool: web::Data<Pool<ConnectionManager>>, otp_link: web::Path<String>) -> impl Responder {
+
+    let result: ActionResult<()> = AuthService::activation_user(pool, otp_link.into_inner()).await;
+
+    match result {
+        response if response.error.is_some() => {
+            HttpResponse::InternalServerError().json(response)
+        }, // Jika error, HTTP 500
+        response if response.result => HttpResponse::Ok().json(response), // Jika berhasil, HTTP 200
+        response => HttpResponse::BadRequest().json(response), // Jika gagal, HTTP 400
+    }
+}
