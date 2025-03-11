@@ -35,6 +35,18 @@ pub struct RegisterRequest {
     pub app_ipaddress: String
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ResetPasswordRequest {
+    pub email: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChangePasswordRequest {
+    pub email: String,
+    pub password: String,
+    pub reset_password_key: String
+}
+
 #[derive(Debug, Serialize)]
 pub struct ActionResult<T> {
     pub result: bool,

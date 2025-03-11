@@ -3,8 +3,7 @@ use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use tiberius::QueryStream;
-use tokio_stream::StreamExt;
-use crate::contexts::{connection::DbTransaction, crypto::encrypt_text, model::{ActionResult, LoginRequest, RegisterRequest, WebUser}};
+use crate::contexts::{connection::DbTransaction, crypto::encrypt_text, model::{ActionResult, ChangePasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest, WebUser}};
 use super::generic_service::GenericService;
 
 pub struct AuthService;
@@ -68,11 +67,13 @@ impl AuthService {
                 ).await;
         
                 match query_result {
-                    Ok(mut stream) => {
-                        if stream.next().await.transpose().is_ok() {
-                            // Jika email sudah ada, return error
-                            result.error = Some("Email sudah terdaftar".to_string());
-                            return result;
+                    Ok(rows) => {
+                        if let Ok(Some(row)) = rows.into_row().await {
+                            if row.get::<&str, _>("Email").is_some() {
+                                result.result = false;
+                                result.error = Some("Email already exists".into());
+                                return result;
+                            }
                         }
                     }
                     Err(err) => {
@@ -193,58 +194,224 @@ impl AuthService {
 
         let mut result: ActionResult<()> = ActionResult::default();
 
-        let mut conn = match connection.get().await {
-            Ok(conn) => conn,
-            Err(err) => {
-                result.error = Some(format!("Database connection error: {}", err));
-                return result;
-            }
-        };
-    
-        // Eksekusi query
-        let mut stream = match conn.query(
-            r#"SELECT AuthUserNID, OTPGeneratedLinkDate FROM AuthUser WHERE OTPGeneratedLinkDate = @P1"#,
-            &[&otp_link]
-        ).await {
-            Ok(stream) => stream,
-            Err(err) => {
-                result.error = Some(format!("Query error: {}", err));
-                return result;
-            }
-        };
-    
-        // Cek apakah ada hasil dari query
-        if stream.next().await.transpose().is_ok() {
-            // Mulai transaksi database
-            let trans = match DbTransaction::begin(&connection).await {
-                Ok(trans) => trans,
-                Err(err) => {
-                    result.error = Some(format!("Failed to start transaction: {:?}", err));
-                    return result;
+        match connection.clone().get().await {
+            Ok(mut conn) => {
+                let query_result: Result<QueryStream, _> = conn.query(
+                    r#"SELECT AuthUserNID 
+                    FROM AuthUser 
+                    WHERE OTPGeneratedLink = @P1"#, &[&otp_link]).await;
+                match query_result {
+                    Ok(rows) => {
+                        if let Ok(Some(row)) = rows.into_row().await {
+                            match DbTransaction::begin(&connection).await {
+                                Ok(trans) => {
+                                    // 🔴 Scope ketiga: Insert ke TableRequest
+                                    match trans.conn.lock().await.as_mut() {
+                                        Some(conn) => {
+                                            if let Err(err) = conn.execute(
+                                                r#"UPDATE [dbo].[AuthUser]
+                                                    set [OTPGeneratedLink] = @P2, [disableLogin] = @P3,
+                                                    [ActivateTime] = @P4
+                                                    WHERE AuthUserNID = @P1"#,
+                                                &[
+                                                    &row.get("AuthUserNID").unwrap_or(0),
+                                                    &otp_link,
+                                                    &false,
+                                                    &chrono::Utc::now(),
+                                                ],
+                                            ).await {
+                                                result.error = Some(format!("Fauled: {:?}", err));
+                                                return result;
+                                            }
+                                        }
+                                        None => {
+                                            result.error = Some("Failed to get database connection".into());
+                                            return result;
+                                        }
+                                    }
+                    
+                                    // 🔵 Commit transaksi
+                                    if let Err(err) = trans.commit().await {
+                                        result.error = Some(format!("Failed to commit transaction: {:?}", err));
+                                        return result;
+                                    }
+                    
+                                    result.result = true;
+                                    result.message = "Activation successfully".to_string();
+                                }
+                                Err(err) => {
+                                    result.error = Some(format!("Failed to start transaction: {:?}", err));
+                                }
+                            }
+                    
+                        } else {
+                            result.message = format!("No user found for email");
+                            return result;
+                        }
+                    },
+                    Err(err) => {
+                        result.error = format!("Query execution failed: {:?}", err).into();
+                        return result;
+                    },
                 }
-            };
-    
-            // Kunci koneksi transaksi
-            if let Some(conn) = trans.conn.lock().await.as_mut() {
-                // Eksekusi query insert ke AuthUser
-                if let Err(err) = conn.execute(
-                    r#"UPDATE [dbo].[AuthUser] SET [disableLogin] = 0, ActivateTime = @P2, CountResendActivation = @P3
-                        WHERE OTPGeneratedLink = @P1"#,
-                    &[&otp_link, &chrono::Utc::now(), &1i32],
-                ).await {
-                    result.error = Some(format!("Failed to insert AuthUser: {:?}", err));
-                    return result;
-                }
-            } else {
-                result.error = Some("Failed to get database connection".into());
+            },
+            Err(err) => {
+                result.error = format!("Internal Server error: {:?}", err).into();
                 return result;
-            }
-    
-            result.result = true;
-            result.message = "User registered successfully".to_string();
+            }, 
         }
 
         return result;
         
     }
+
+    pub async  fn forget_password(connection: web::Data<Pool<ConnectionManager>>, request: ResetPasswordRequest) -> ActionResult<()> {
+
+        let mut result: ActionResult<()> = ActionResult::default();
+
+        match connection.clone().get().await {
+            Ok(mut conn) => {
+                let query_result: Result<QueryStream, _> = conn.query(
+                    r#"SELECT AuthUserNID 
+                    FROM AuthUser 
+                    WHERE Email = @P1"#, &[&request.email]).await;
+                match query_result {
+                    Ok(rows) => {
+                        if let Ok(Some(row)) = rows.into_row().await {
+                            match DbTransaction::begin(&connection).await {
+                                Ok(trans) => {
+                                    // 🔴 Scope ketiga: Insert ke TableRequest
+                                    match trans.conn.lock().await.as_mut() {
+                                        Some(conn) => {
+                                            if let Err(err) = conn.execute(
+                                                r#"UPDATE [dbo].[AuthUser]
+                                                    SET [ResetPasswordKey] = @P2, [ResetPasswordFlag] = @P3, [ResetPasswordDate] = @P4
+                                                    WHERE AuthUserNID = @P1"#,
+                                                &[
+                                                    &row.get("AuthUserNID").unwrap_or(0),
+                                                    &GenericService::random_string(70),
+                                                    &true,
+                                                    &chrono::Utc::now(),
+                                                ],
+                                            ).await {
+                                                result.error = Some(format!("Fauled: {:?}", err));
+                                                return result;
+                                            }
+                                        }
+                                        None => {
+                                            result.error = Some("Failed to get database connection".into());
+                                            return result;
+                                        }
+                                    }
+                    
+                                    // 🔵 Commit transaksi
+                                    if let Err(err) = trans.commit().await {
+                                        result.error = Some(format!("Failed to commit transaction: {:?}", err));
+                                        return result;
+                                    }
+                    
+                                    result.result = true;
+                                    result.message = "Reset password successfully".to_string();
+                                }
+                                Err(err) => {
+                                    result.error = Some(format!("Failed to start transaction: {:?}", err));
+                                }
+                            }
+                    
+                        } else {
+                            result.message = format!("No user found for email");
+                            return result;
+                        }
+                    },
+                    Err(err) => {
+                        result.error = format!("Query execution failed: {:?}", err).into();
+                        return result;
+                    },
+                }
+            },
+            Err(err) => {
+                result.error = format!("Internal Server error: {:?}", err).into();
+                return result;
+            }, 
+        }
+
+        return result;
+        
+    }
+
+    pub async  fn change_password(connection: web::Data<Pool<ConnectionManager>>, request: ChangePasswordRequest) -> ActionResult<()> {
+
+        let mut result: ActionResult<()> = ActionResult::default();
+        let enc_password = encrypt_text(&request.password);
+
+        match connection.clone().get().await {
+            Ok(mut conn) => {
+                let query_result: Result<QueryStream, _> = conn.query(
+                    r#"SELECT AuthUserNID 
+                    FROM AuthUser 
+                    WHERE Email = @P1 and ResetPasswordKey = @P2"#, &[&request.email, &request.reset_password_key]).await;
+                match query_result {
+                    Ok(rows) => {
+                        if let Ok(Some(row)) = rows.into_row().await {
+                            match DbTransaction::begin(&connection).await {
+                                Ok(trans) => {
+                                    // 🔴 Scope ketiga: Insert ke TableRequest
+                                    match trans.conn.lock().await.as_mut() {
+                                        Some(conn) => {
+                                            if let Err(err) = conn.execute(
+                                                r#"UPDATE [dbo].[AuthUser]
+                                                    set [ResetPasswordKey] = @P2, [ResetPasswordFlag] = @P3, [Password] = @P4
+                                                    WHERE AuthUserNID = @P1"#,
+                                                &[
+                                                    &row.get("AuthUserNID").unwrap_or(0),
+                                                    &request.reset_password_key,
+                                                    &true,
+                                                    &enc_password,
+                                                ],
+                                            ).await {
+                                                result.error = Some(format!("Fauled: {:?}", err));
+                                                return result;
+                                            }
+                                        }
+                                        None => {
+                                            result.error = Some("Failed to get database connection".into());
+                                            return result;
+                                        }
+                                    }
+                    
+                                    // 🔵 Commit transaksi
+                                    if let Err(err) = trans.commit().await {
+                                        result.error = Some(format!("Failed to commit transaction: {:?}", err));
+                                        return result;
+                                    }
+                    
+                                    result.result = true;
+                                    result.message = "Change password successfully".to_string();
+                                }
+                                Err(err) => {
+                                    result.error = Some(format!("Failed to start transaction: {:?}", err));
+                                }
+                            }
+                    
+                        } else {
+                            result.message = format!("No user found for email");
+                            return result;
+                        }
+                    },
+                    Err(err) => {
+                        result.error = format!("Query execution failed: {:?}", err).into();
+                        return result;
+                    },
+                }
+            },
+            Err(err) => {
+                result.error = format!("Internal Server error: {:?}", err).into();
+                return result;
+            }, 
+        }
+
+        return result;
+        
+    }
+
 }
