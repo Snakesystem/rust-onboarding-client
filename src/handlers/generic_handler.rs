@@ -12,7 +12,7 @@ pub fn generic_scope() -> Scope {
 #[get("/company")]
 pub async fn get_company(pool: web::Data<Pool<ConnectionManager>>) -> impl Responder {
 
-    let result: ActionResult<Company> = GenericService::get_company(pool).await;
+    let result: ActionResult<Company, _> = GenericService::get_company(pool).await;
 
     match result {
         response if response.error.is_some() => {

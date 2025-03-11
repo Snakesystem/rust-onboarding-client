@@ -9,9 +9,9 @@ use super::generic_service::GenericService;
 pub struct AuthService;
 
 impl AuthService {
-    pub async fn login(connection: web::Data<Pool<ConnectionManager>>,request: LoginRequest) -> ActionResult<WebUser> {
+    pub async fn login(connection: web::Data<Pool<ConnectionManager>>,request: LoginRequest) -> ActionResult<WebUser, String> {
         
-        let mut result = ActionResult::default();
+        let mut result: ActionResult<WebUser, String> = ActionResult::default();
         let enc_password = encrypt_text(&request.password);
 
         match connection.clone().get().await {
@@ -40,7 +40,7 @@ impl AuthService {
                         } else {
                             result.message = format!("No user found for email: {}", request.email);
                             return result;
-                        }
+                        } 
                     },
                     Err(err) => {
                         result.error = format!("Query execution failed: {:?}", err).into();
@@ -55,9 +55,9 @@ impl AuthService {
         }
     }
 
-    pub async fn register(connection: web::Data<Pool<ConnectionManager>>, request: RegisterRequest) -> ActionResult<()> {
+    pub async fn register(connection: web::Data<Pool<ConnectionManager>>, request: RegisterRequest) -> ActionResult<(), String> {
         
-        let mut result: ActionResult<()> = ActionResult::default();
+        let mut result: ActionResult<(), String> = ActionResult::default();
         let enc_password = encrypt_text(&request.password);
 
         match connection.clone().get().await {
@@ -190,9 +190,9 @@ impl AuthService {
         return result;
     }
 
-    pub async  fn activation_user(connection: web::Data<Pool<ConnectionManager>>, otp_link: String) -> ActionResult<()> {
+    pub async  fn activation_user(connection: web::Data<Pool<ConnectionManager>>, otp_link: String) -> ActionResult<(), String> {
 
-        let mut result: ActionResult<()> = ActionResult::default();
+        let mut result: ActionResult<(), String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -265,9 +265,9 @@ impl AuthService {
         
     }
 
-    pub async  fn forget_password(connection: web::Data<Pool<ConnectionManager>>, request: ResetPasswordRequest) -> ActionResult<()> {
+    pub async  fn forget_password(connection: web::Data<Pool<ConnectionManager>>, request: ResetPasswordRequest) -> ActionResult<(), String> {
 
-        let mut result: ActionResult<()> = ActionResult::default();
+        let mut result: ActionResult<(), String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -339,9 +339,9 @@ impl AuthService {
         
     }
 
-    pub async  fn change_password(connection: web::Data<Pool<ConnectionManager>>, request: ChangePasswordRequest) -> ActionResult<()> {
+    pub async  fn change_password(connection: web::Data<Pool<ConnectionManager>>, request: ChangePasswordRequest) -> ActionResult<(), String> {
 
-        let mut result: ActionResult<()> = ActionResult::default();
+        let mut result: ActionResult<(), String> = ActionResult::default();
         let enc_password = encrypt_text(&request.password);
 
         match connection.clone().get().await {

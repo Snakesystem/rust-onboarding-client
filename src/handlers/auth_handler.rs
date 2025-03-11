@@ -24,7 +24,7 @@ pub fn auth_scope() -> Scope {
 #[post("/login")]
 async fn login(req: HttpRequest, pool: web::Data<Pool<ConnectionManager>>, request: web::Json<LoginRequest>) -> impl Responder {
 
-    let result: ActionResult<WebUser> = AuthService::login(pool, request.into_inner()).await;
+    let result: ActionResult<WebUser, _> = AuthService::login(pool, request.into_inner()).await;
 
     match result {
         response if response.error.is_some() => {
@@ -121,7 +121,7 @@ async fn register(req: HttpRequest, pool: web::Data<Pool<ConnectionManager>>, mu
 
     request.app_ipaddress = GenericService::get_ip_address(&req);
 
-    let result: ActionResult<()> = AuthService::register(pool, request.into_inner()).await;
+    let result: ActionResult<(), _> = AuthService::register(pool, request.into_inner()).await;
 
     match result {
         response if response.error.is_some() => {
@@ -135,7 +135,7 @@ async fn register(req: HttpRequest, pool: web::Data<Pool<ConnectionManager>>, mu
 #[get("/activation/{otp_link}")]
 async fn activation_user(pool: web::Data<Pool<ConnectionManager>>, otp_link: web::Path<String>) -> impl Responder {
 
-    let result: ActionResult<()> = AuthService::activation_user(pool, otp_link.into_inner()).await;
+    let result: ActionResult<(), _> = AuthService::activation_user(pool, otp_link.into_inner()).await;
 
     match result {
         response if response.error.is_some() => {
@@ -149,7 +149,7 @@ async fn activation_user(pool: web::Data<Pool<ConnectionManager>>, otp_link: web
 #[post("/reset-password")]
 async fn forget_password(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<ResetPasswordRequest>) -> impl Responder {
 
-    let result: ActionResult<()> = AuthService::forget_password(pool, request.into_inner()).await;
+    let result: ActionResult<(), _> = AuthService::forget_password(pool, request.into_inner()).await;
 
     match result {
         response if response.error.is_some() => {
@@ -163,7 +163,7 @@ async fn forget_password(pool: web::Data<Pool<ConnectionManager>>, request: web:
 #[post("/change-password")]
 async fn change_password(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<ChangePasswordRequest>) -> impl Responder {
 
-    let result: ActionResult<()> = AuthService::change_password(pool, request.into_inner()).await;
+    let result: ActionResult<(), _> = AuthService::change_password(pool, request.into_inner()).await;
 
     match result {
         response if response.error.is_some() => {

@@ -10,7 +10,7 @@ use crate::contexts::model::{ActionResult, ListData};
 pub struct OptionService;
 
 impl OptionService {
-    pub async fn get_nationality(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Vec<ListData>> {
+    pub async fn get_nationality(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Vec<ListData>, String> {
         let mut result = ActionResult::default();
 
         match connection.clone().get().await {
@@ -53,8 +53,8 @@ impl OptionService {
         }
     }
 
-    pub async fn get_city(connection: web::Data<Pool<ConnectionManager>>, city: String) -> ActionResult<Vec<ListData>> {
-        let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    pub async fn get_city(connection: web::Data<Pool<ConnectionManager>>, city: String) -> ActionResult<Vec<ListData>, String> {
+        let mut result: ActionResult<Vec<ListData>, String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -98,8 +98,8 @@ impl OptionService {
         }
     }
 
-    pub async fn get_district(connection: web::Data<Pool<ConnectionManager>>, city_id: i32) -> ActionResult<Vec<HashMap<String, String>>> {
-        let mut result: ActionResult<Vec<HashMap<String, String>>> = ActionResult::default();
+    pub async fn get_district(connection: web::Data<Pool<ConnectionManager>>, city_id: i32) -> ActionResult<Vec<HashMap<String, String>>, String> {
+        let mut result: ActionResult<Vec<HashMap<String, String>>, _> = ActionResult::default();
 
         let mut obj: HashMap<String, String> = HashMap::new();
 
@@ -141,8 +141,8 @@ impl OptionService {
         }
     }
 
-    pub async fn get_sub_district(connection: web::Data<Pool<ConnectionManager>>, district: String) -> ActionResult<Vec<ListData>> {
-        let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    pub async fn get_sub_district(connection: web::Data<Pool<ConnectionManager>>, district: String) -> ActionResult<Vec<ListData>, String> {
+        let mut result: ActionResult<Vec<ListData>, String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -185,7 +185,7 @@ impl OptionService {
         }
     }
 
-    pub async fn get_sales(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Vec<ListData>> {
+    pub async fn get_sales(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Vec<ListData>, String> {
         let mut result = ActionResult::default();
 
         match connection.clone().get().await {
@@ -228,8 +228,8 @@ impl OptionService {
         }
     }
 
-    pub async fn get_lookup_data(connection: web::Data<Pool<ConnectionManager>>, option: String) -> ActionResult<Vec<ListData>> {
-        let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    pub async fn get_lookup_data(connection: web::Data<Pool<ConnectionManager>>, option: String) -> ActionResult<Vec<ListData>, String> {
+        let mut result: ActionResult<Vec<ListData>, String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -271,8 +271,8 @@ impl OptionService {
         }
     }
 
-    pub async fn get_api_lookup_data(connection: web::Data<Pool<ConnectionManager>>, option: String) -> ActionResult<Vec<ListData>> {
-        let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    pub async fn get_api_lookup_data(connection: web::Data<Pool<ConnectionManager>>, option: String) -> ActionResult<Vec<ListData>, String> {
+        let mut result: ActionResult<Vec<ListData>, String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -314,7 +314,7 @@ impl OptionService {
         }
     }
 
-    pub async fn get_bank(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Vec<ListData>> {
+    pub async fn get_bank(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Vec<ListData>, String> {
         let mut result = ActionResult::default();
 
         match connection.clone().get().await {
@@ -357,7 +357,7 @@ impl OptionService {
         }
     }
 
-    pub async fn get_question_npwp() -> ActionResult<Vec<ListData>> {
+    pub async fn get_question_npwp() -> ActionResult<Vec<ListData>, String> {
         let mut result = ActionResult::default();
         let mut question_npwp: Vec<ListData> = Vec::new(); // ⬅️ Tampung semua data
 
@@ -377,8 +377,8 @@ impl OptionService {
         return result;
     }
 
-    pub async fn get_occupation(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Vec<ListData>> {
-        let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    pub async fn get_occupation(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Vec<ListData>, String> {
+        let mut result: ActionResult<Vec<ListData>, String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -419,8 +419,8 @@ impl OptionService {
         }
     }
 
-    pub async fn get_position(connection: web::Data<Pool<ConnectionManager>>, occupation_id: i32) -> ActionResult<Vec<ListData>> {
-        let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    pub async fn get_position(connection: web::Data<Pool<ConnectionManager>>, occupation_id: i32) -> ActionResult<Vec<ListData>, String> {
+        let mut result: ActionResult<Vec<ListData>, String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -461,8 +461,8 @@ impl OptionService {
         }
     }
 
-    pub async fn get_nature_bussiness(connection: web::Data<Pool<ConnectionManager>>, occupation_id: i32, position_id: i32) -> ActionResult<Vec<ListData>> {
-        let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    pub async fn get_nature_bussiness(connection: web::Data<Pool<ConnectionManager>>, occupation_id: i32, position_id: i32) -> ActionResult<Vec<ListData>, String> {
+        let mut result: ActionResult<Vec<ListData>, String> = ActionResult::default();
 
         match connection.clone().get().await {
             Ok(mut conn) => {

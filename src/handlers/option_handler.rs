@@ -43,7 +43,7 @@ pub fn option_scope() -> Scope {
 #[get("/nationality")]
 pub async fn get_nationality(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -54,7 +54,7 @@ pub async fn get_nationality(pool: web::Data<Pool<ConnectionManager>>, session: 
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_nationality(pool).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_nationality(pool).await;
 
                     result.result = data.result;
                     result.message = data.message;
@@ -100,7 +100,7 @@ pub async fn get_city(pool: web::Data<Pool<ConnectionManager>>, session: Option<
         }));
     }
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -111,7 +111,7 @@ pub async fn get_city(pool: web::Data<Pool<ConnectionManager>>, session: Option<
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_city(pool, params.to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_city(pool, params.to_string()).await;
 
                     result.result = data.result;
                     result.message = data.message;
@@ -150,7 +150,7 @@ pub async fn get_district(pool: web::Data<Pool<ConnectionManager>>, session: Opt
         Err(response) => return response,
     };
 
-    let mut result: ActionResult<Vec<HashMap<String, String>>> = ActionResult::default();
+    let mut result: ActionResult<Vec<HashMap<String, String>>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -161,7 +161,7 @@ pub async fn get_district(pool: web::Data<Pool<ConnectionManager>>, session: Opt
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<HashMap<String, String>>> = OptionService::get_district(pool, params).await;
+                    let data: ActionResult<Vec<HashMap<String, String>>, _> = OptionService::get_district(pool, params).await;
 
                     result.result = data.result;
                     result.message = data.message;
@@ -206,7 +206,7 @@ pub async fn get_sub_district(pool: web::Data<Pool<ConnectionManager>>, session:
         }));
     }
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -217,7 +217,7 @@ pub async fn get_sub_district(pool: web::Data<Pool<ConnectionManager>>, session:
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_sub_district(pool, params.to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_sub_district(pool, params.to_string()).await;
 
                     result.result = data.result;
                     result.message = data.message;
@@ -251,7 +251,7 @@ pub async fn get_sub_district(pool: web::Data<Pool<ConnectionManager>>, session:
 #[get("/sales")]
 pub async fn get_sales(pool: web::Data<Pool<ConnectionManager>>) -> impl Responder {
 
-    let result: ActionResult<Vec<ListData>> = OptionService::get_sales(pool).await;
+    let result: ActionResult<Vec<ListData>, _> = OptionService::get_sales(pool).await;
 
     match result {
         response if response.error.is_some() => {
@@ -269,7 +269,7 @@ pub async fn get_sales(pool: web::Data<Pool<ConnectionManager>>) -> impl Respond
 #[get("/bank")]
 pub async fn get_bank(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -280,7 +280,7 @@ pub async fn get_bank(pool: web::Data<Pool<ConnectionManager>>, session: Option<
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_bank(pool).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_bank(pool).await;
 
                     result.result = data.result;
                     result.message = data.message;
@@ -314,7 +314,7 @@ pub async fn get_bank(pool: web::Data<Pool<ConnectionManager>>, session: Option<
 #[get("/npwp")]
 pub async fn get_question_npwp(session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -325,7 +325,7 @@ pub async fn get_question_npwp(session: Option<Identity>) -> impl Responder {
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_question_npwp().await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_question_npwp().await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -351,7 +351,7 @@ pub async fn get_question_npwp(session: Option<Identity>) -> impl Responder {
 #[get("/income")]
 pub async fn get_income(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -362,7 +362,7 @@ pub async fn get_income(pool: web::Data<Pool<ConnectionManager>>, session: Optio
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "IncomePerAnnum".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "IncomePerAnnum".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -398,7 +398,7 @@ pub async fn get_income(pool: web::Data<Pool<ConnectionManager>>, session: Optio
 #[get("/education")]
 pub async fn get_education(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -409,7 +409,7 @@ pub async fn get_education(pool: web::Data<Pool<ConnectionManager>>, session: Op
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "Educational".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "Educational".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -445,7 +445,7 @@ pub async fn get_education(pool: web::Data<Pool<ConnectionManager>>, session: Op
 #[get("/maritalstatus")]
 pub async fn get_maritalstatus(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -456,7 +456,7 @@ pub async fn get_maritalstatus(pool: web::Data<Pool<ConnectionManager>>, session
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "MaritalStatus".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "MaritalStatus".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -492,7 +492,7 @@ pub async fn get_maritalstatus(pool: web::Data<Pool<ConnectionManager>>, session
 #[get("/gender")]
 pub async fn get_gender(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id| id.id()) {
         None => {
@@ -503,7 +503,7 @@ pub async fn get_gender(pool: web::Data<Pool<ConnectionManager>>, session: Optio
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "Sex".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "Sex".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -539,7 +539,7 @@ pub async fn get_gender(pool: web::Data<Pool<ConnectionManager>>, session: Optio
 #[get("/religion")]
 pub async fn get_religion(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -550,7 +550,7 @@ pub async fn get_religion(pool: web::Data<Pool<ConnectionManager>>, session: Opt
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "Religion".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "Religion".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -586,7 +586,7 @@ pub async fn get_religion(pool: web::Data<Pool<ConnectionManager>>, session: Opt
 #[get("/fundsource")]
 pub async fn get_fund_source(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -597,7 +597,7 @@ pub async fn get_fund_source(pool: web::Data<Pool<ConnectionManager>>, session: 
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "FundSource".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "FundSource".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -633,7 +633,7 @@ pub async fn get_fund_source(pool: web::Data<Pool<ConnectionManager>>, session: 
 #[get("/residencestatus")]
 pub async fn get_residence_status(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -644,7 +644,7 @@ pub async fn get_residence_status(pool: web::Data<Pool<ConnectionManager>>, sess
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "ResidencyStatus".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "ResidencyStatus".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -680,7 +680,7 @@ pub async fn get_residence_status(pool: web::Data<Pool<ConnectionManager>>, sess
 #[get("/beneficiary")]
 pub async fn get_beneficiary(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -691,7 +691,7 @@ pub async fn get_beneficiary(pool: web::Data<Pool<ConnectionManager>>, session: 
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "AssetOwner".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "AssetOwner".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -727,7 +727,7 @@ pub async fn get_beneficiary(pool: web::Data<Pool<ConnectionManager>>, session: 
 #[get("/investmentobjective")]
 pub async fn get_investment_objective(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -738,7 +738,7 @@ pub async fn get_investment_objective(pool: web::Data<Pool<ConnectionManager>>, 
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "InvestmentObjectives".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "InvestmentObjectives".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -774,7 +774,7 @@ pub async fn get_investment_objective(pool: web::Data<Pool<ConnectionManager>>, 
 #[get("/risk")]
 pub async fn get_risk(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -785,7 +785,7 @@ pub async fn get_risk(pool: web::Data<Pool<ConnectionManager>>, session: Option<
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "Risk".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "Risk".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -821,7 +821,7 @@ pub async fn get_risk(pool: web::Data<Pool<ConnectionManager>>, session: Option<
 #[get("/occupation")]
 pub async fn get_occupation(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -832,7 +832,7 @@ pub async fn get_occupation(pool: web::Data<Pool<ConnectionManager>>, session: O
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_occupation(pool).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_occupation(pool).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -868,7 +868,7 @@ pub async fn get_occupation(pool: web::Data<Pool<ConnectionManager>>, session: O
 #[get("/position/{occupation_id}")]
 pub async fn get_position(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>, occupation_id: web::Path<String>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     let params: i32 = match GenericService::parse_param(&occupation_id.into_inner()) {
         Ok(value) => value,
@@ -884,7 +884,7 @@ pub async fn get_position(pool: web::Data<Pool<ConnectionManager>>, session: Opt
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_position(pool, params).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_position(pool, params).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -943,7 +943,7 @@ pub async fn get_nature_bussiness(pool: web::Data<Pool<ConnectionManager>>, sess
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_nature_bussiness(pool, params1, params2).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_nature_bussiness(pool, params1, params2).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -979,7 +979,7 @@ pub async fn get_nature_bussiness(pool: web::Data<Pool<ConnectionManager>>, sess
 #[get("/spouse-relationship")]
 pub async fn get_spouse_relationship(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -990,7 +990,7 @@ pub async fn get_spouse_relationship(pool: web::Data<Pool<ConnectionManager>>, s
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_api_lookup_data(pool, "SpouseRelationship".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_api_lookup_data(pool, "SpouseRelationship".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -1026,7 +1026,7 @@ pub async fn get_spouse_relationship(pool: web::Data<Pool<ConnectionManager>>, s
 #[get("/spouse-occupation")]
 pub async fn get_spouse_occupation(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -1037,7 +1037,7 @@ pub async fn get_spouse_occupation(pool: web::Data<Pool<ConnectionManager>>, ses
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_api_lookup_data(pool, "SpouseOccupation".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_api_lookup_data(pool, "SpouseOccupation".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -1073,7 +1073,7 @@ pub async fn get_spouse_occupation(pool: web::Data<Pool<ConnectionManager>>, ses
 #[get("/spouse-position")]
 pub async fn get_spouse_position(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -1084,7 +1084,7 @@ pub async fn get_spouse_position(pool: web::Data<Pool<ConnectionManager>>, sessi
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "Position".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "Position".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -1120,7 +1120,7 @@ pub async fn get_spouse_position(pool: web::Data<Pool<ConnectionManager>>, sessi
 #[get("/spouse-naturebusiness")]
 pub async fn get_spouse_nature_bussiness(pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
 
-    let mut result: ActionResult<Vec<ListData>> = ActionResult::default();
+    let mut result: ActionResult<Vec<ListData>, _> = ActionResult::default();
 
     match session.map(|id: Identity| id.id()) {
         None => {
@@ -1131,7 +1131,7 @@ pub async fn get_spouse_nature_bussiness(pool: web::Data<Pool<ConnectionManager>
             match validate_jwt(&token) {
                 Ok(_) => {
 
-                    let data: ActionResult<Vec<ListData>> = OptionService::get_lookup_data(pool, "NatureOfBusiness".to_string()).await;
+                    let data: ActionResult<Vec<ListData>, _> = OptionService::get_lookup_data(pool, "NatureOfBusiness".to_string()).await;
                     
                     result.result = data.result;
                     result.message = data.message;
@@ -1167,7 +1167,7 @@ pub async fn get_spouse_nature_bussiness(pool: web::Data<Pool<ConnectionManager>
 #[get("/bank-rdn")]
 pub async fn get_bank_rdn(pool: web::Data<Pool<ConnectionManager>>) -> impl Responder {
 
-    let result: ActionResult<Vec<ListData>> = OptionService::get_api_lookup_data(pool, "QuestionRDN".to_string()).await;
+    let result: ActionResult<Vec<ListData>, _> = OptionService::get_api_lookup_data(pool, "QuestionRDN".to_string()).await;
 
     match result {
         response if response.error.is_some() => {
@@ -1185,7 +1185,7 @@ pub async fn get_bank_rdn(pool: web::Data<Pool<ConnectionManager>>) -> impl Resp
 #[get("/category")]
 pub async fn get_category(pool: web::Data<Pool<ConnectionManager>>) -> impl Responder {
 
-    let result: ActionResult<Vec<ListData>> = OptionService::get_api_lookup_data(pool, "ClientNCategory".to_string()).await;
+    let result: ActionResult<Vec<ListData>, _> = OptionService::get_api_lookup_data(pool, "ClientNCategory".to_string()).await;
 
     match result {
         response if response.error.is_some() => {

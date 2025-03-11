@@ -10,7 +10,7 @@ use crate::contexts::model::{ActionResult, Company};
 pub struct GenericService;
 
 impl GenericService {
-    pub async fn get_company(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Company> {
+    pub async fn get_company(connection: web::Data<Pool<ConnectionManager>>) -> ActionResult<Company, String> {
         let mut result = ActionResult::default();
 
         match connection.clone().get().await {
@@ -58,7 +58,7 @@ impl GenericService {
     pub fn json_error_handler(err: error::JsonPayloadError, _req: &actix_web::HttpRequest) -> actix_web::Error {
         let error_message = format!("Json deserialize error: {}", err);
 
-        let result = ActionResult::<String> { // <- Ubah dari ActionResult<()> ke ActionResult<String>
+        let result = ActionResult::<String, _> { // <- Ubah dari ActionResult<()> ke ActionResult<String>
             result: false,
             message: "Invalid Request".to_string(),
             error: Some(error_message), // <- Sekarang cocok karena `data: Option<String>`
