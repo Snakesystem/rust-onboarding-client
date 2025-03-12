@@ -6,6 +6,8 @@ pub mod validator {
     use regex::Regex;
     use validator::{ValidationError, ValidationErrors};
 
+    use crate::contexts::model::DataPendukungRequest;
+
     pub fn required(value: &str) -> Result<(), ValidationError> {
         if value.trim().is_empty() {
             let mut error = ValidationError::new("required");
@@ -118,6 +120,15 @@ pub mod validator {
                 Err(error)
             }
         }
+    }
+    
+    pub fn validate_question_text(text: &Option<String>, question: &bool) -> Result<(), ValidationError> {
+        if *question && text.as_ref().map(|s| s.trim().is_empty()).unwrap_or(true) {
+            let mut error = ValidationError::new("required");
+            error.message = Some("Field is required when the corresponding question is true".into());
+            return Err(error);
+        }
+        Ok(())
     }
 
     pub fn format_validation_errors(errors: &ValidationErrors) -> HashMap<String, String> {

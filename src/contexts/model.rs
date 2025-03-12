@@ -1,10 +1,10 @@
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use serde::{Deserialize, Deserializer, Serialize};
-use validator::Validate;
+use validator::{Validate, ValidationError};
 use crate::services::validation_service::validator::{
     required, valid_phone_number, valid_name, valid_number_card, required_int,
     required_datetime, validate_base64_image, valid_password
-};
+}; 
 // pub struct DateTimeConverter;
 
 // impl DateTimeConverter {
@@ -129,6 +129,118 @@ pub struct DataPribadiRequest {
     #[validate(custom(function = "required"), custom(function = "valid_number_card"),)]
     pub domicile_zipcode: Option<String>,
     // #endregion
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct DataBankRequest {
+    #[validate(custom(function = "required_int"))]
+    pub question_rdn: i32,
+    #[validate(custom(function = "required"))]
+    pub bank_name: Option<String>,
+    #[validate(custom(function = "required"), custom(function = "valid_name"))]
+    pub bank_account_holder: Option<String>,
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
+    pub bank_account_number: Option<String>,
+    #[validate(custom(function = "required"))]
+    pub bank_branch: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct DataPekerjaanRequest {
+    #[validate(custom(function = "required"))]
+    pub company_name: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub company_city: i32,
+    #[validate(custom(function = "required"))]
+    pub company_address: Option<String>,
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
+    pub company_zipcode: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub question_npwp: i32,
+    #[validate(custom(function = "required"))]
+    pub npwp_reason: Option<String>,
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
+    pub npwp_number: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub fund_source: i32,
+    pub fund_source_text: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub occupation: i32,
+    pub occupation_text: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub nature_business: i32,
+    pub nature_business_text: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub position: i32,
+    pub position_text: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub income_peranum: i32,
+    #[validate(custom(function = "required"))]
+    pub spouse_name: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub spouse_relationship: i32,
+    #[validate(custom(function = "required_int"))]
+    pub spouse_occupation: i32,
+    #[validate(custom(function = "required_int"))]
+    pub spouse_fund_source: i32,
+    #[validate(custom(function = "required_int"))]
+    pub spouse_position: i32,
+    #[validate(custom(function = "required_int"))]
+    pub spouse_income_peranum: i32,
+    #[validate(custom(function = "required_int"))]
+    pub spouse_nature_business: i32,
+    #[validate(custom(function = "required"))]
+    pub spouse_company_name: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub spouse_company_city: i32,
+    #[validate(custom(function = "required"))]
+    pub spouse_company_address: Option<String>,
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
+    pub spouse_company_zipcode: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct DataPendukungRequest {
+    pub question_1: bool,
+    pub question_1text: Option<String>,
+
+    pub question_2: bool,
+    pub question_2text: Option<String>,
+
+    pub question_3: bool,
+    pub question_3text: Option<String>,
+
+    pub question_4: bool,
+    pub question_4text: Option<String>,
+
+    pub question_5: bool,
+    pub question_5text: Option<String>,
+
+    pub question_6: bool,
+    pub question_6text: Option<String>,
+}
+
+impl DataPendukungRequest {
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        self.validate_question_text(&self.question_1, &self.question_1text, "question_1text")?;
+        self.validate_question_text(&self.question_2, &self.question_2text, "question_2text")?;
+        self.validate_question_text(&self.question_3, &self.question_3text, "question_3text")?;
+        Ok(())
+    }
+
+    fn validate_question_text(
+        &self,
+        question: &bool,
+        text: &Option<String>,
+        field_name: &str,
+    ) -> Result<(), ValidationError> {
+        if *question && text.as_ref().map(|s| s.trim().is_empty()).unwrap_or(true) {
+            let mut error = ValidationError::new("required");
+            error.message = Some(format!("{} is required when the corresponding question is true", field_name).into());
+            return Err(error);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Deserialize, Validate)]

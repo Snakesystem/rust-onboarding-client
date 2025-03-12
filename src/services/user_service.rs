@@ -5,7 +5,7 @@ use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use tiberius::QueryStream;
 
-use crate::contexts::{connection::Transaction, jwt_session::Claims, model::{ActionResult, DataPribadiRequest}};
+use crate::contexts::{connection::Transaction, jwt_session::Claims, model::{ActionResult, DataBankRequest, DataPribadiRequest}};
 
 pub struct UserService;
 
@@ -13,6 +13,7 @@ impl UserService {
     pub async fn save_data_pribadi(connection: web::Data<Pool<ConnectionManager>>, request: DataPribadiRequest, session: Claims) -> ActionResult<HashMap<String, String>, String> {
 
         let mut result: ActionResult<HashMap<String, String>, String> = ActionResult::default();
+        let current_stage: i32 = 1;
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -26,7 +27,7 @@ impl UserService {
                             let stage: i32 = row.get("Stage").unwrap_or(0);
                             let auto_nid: i32 = row.get("AutoNID").unwrap_or(0);
 
-                            if stage > 1 {
+                            if stage > current_stage {
                                 result.message = "Stage has ben first or 1".to_owned();
                                 println!("Satu");
                                 return result;
@@ -141,9 +142,10 @@ impl UserService {
         return result;
     }
 
-    pub async fn save_data_bank(connection: web::Data<Pool<ConnectionManager>>, request: DataPribadiRequest, session: Claims) -> ActionResult<HashMap<String, String>, String> {
+    pub async fn save_data_bank(connection: web::Data<Pool<ConnectionManager>>, request: DataBankRequest, session: Claims) -> ActionResult<HashMap<String, String>, String> {
 
         let mut result: ActionResult<HashMap<String, String>, String> = ActionResult::default();
+        let current_stage: i32 = 2;
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -157,7 +159,7 @@ impl UserService {
                             let stage: i32 = row.get("Stage").unwrap_or(0);
                             let auto_nid: i32 = row.get("AutoNID").unwrap_or(0);
 
-                            if stage > 2 {
+                            if stage > current_stage {
                                 result.message = "Stage has ben second or 2".to_owned();
                                 println!("Satu");
                                 return result;
@@ -169,42 +171,16 @@ impl UserService {
                                     match trans.conn.lock().await.as_mut() {
                                         Some(conn) => {
                                             if let Err(err) = conn.execute(
-                                        r#"UPDATE [dbo].[UserKYC]
+                                            r#"UPDATE [dbo].[UserKYC]
                                                 SET [Stage] = @P1, [QuestionRDN] = @P2, [BankName] = @P3, [BankAccountHolder] = @P4, [BankAccountNumber] = @P5, [BankBranch] = @P6
-                                                WHERE AutoNID = @P6"#,
+                                            WHERE AutoNID = @P7"#,
                                                 &[
                                                     &3i32,
-                                                    &request.full_name,
-                                                    &request.nationality,
-                                                    &request.idcard_number,
-                                                    &request.idcard_expireddate,
-                                                    &request.sex,
-                                                    &request.birth_date,
-                                                    &request.birth_place,
-                                                    &request.birth_country,
-                                                    &request.mother_name,
-                                                    &request.religion,
-                                                    &request.marital_status,
-                                                    &request.education,
-                                                    &request.idcard_city,
-                                                    &request.idcard_district,
-                                                    &request.idcard_subdistrict,
-                                                    &request.idcard_rt,
-                                                    &request.idcard_rw,
-                                                    &request.idcard_zipcode,
-                                                    &request.idcard_address,
-                                                    &request.copy_id,
-                                                    &request.domicile_city,
-                                                    &request.domicile_district,
-                                                    &request.domicile_subdistrict,
-                                                    &request.domicile_rt,
-                                                    &request.domicile_rw,
-                                                    &request.domicile_zipcode,
-                                                    &request.domicile_address,
-                                                    &"request.idcard_file",
-                                                    &"request.selfie_file",
-                                                    &"request.signature_file",
-                                                    &request.idcard_country,
+                                                    &request.question_rdn,
+                                                    &request.bank_name,
+                                                    &request.bank_account_holder,
+                                                    &request.bank_account_number,
+                                                    &request.bank_branch,
                                                     &auto_nid
                                                 ],
                                             ).await {
