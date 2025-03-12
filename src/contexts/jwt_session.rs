@@ -7,16 +7,16 @@ const SECRET_KEY: &[u8] = b"supersecretkey"; // 🔥 Ganti dengan key yang lebih
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    result: bool,
-    auth_usernid: i32,
-    email: String,
-    mobile_phone: String,
-    disabled_login: bool,
-    expired_token: i64,
-    expired_date: String,
-    register_date: DateTime<Utc>,
-    exp: usize,
-    picture: Option<String>,
+    pub result: bool,
+    pub auth_usernid: i32,
+    pub email: String,
+    pub mobile_phone: String,
+    pub disabled_login: bool,
+    pub expired_token: i64,
+    pub expired_date: String,
+    pub register_date: DateTime<Utc>,
+    pub exp: usize,
+    pub picture: Option<String>,
 }
 
 impl Claims {

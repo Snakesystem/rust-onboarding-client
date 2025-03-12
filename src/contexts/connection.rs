@@ -5,12 +5,12 @@ use tokio::sync::Mutex;
 use std::{env, sync::Arc};
 
 pub type DbPool = Pool<ConnectionManager>;
-pub struct DbTransaction<'a> {
+pub struct Transaction<'a> {
     pub conn: Arc<Mutex<Option<PooledConnection<'a, ConnectionManager>>>>, // 🔥 Pakai lifetime 'a
     committed: bool,
 }
 
-impl<'a> DbTransaction<'a> {
+impl<'a> Transaction<'a> {
     pub async fn begin(pool: &'a Pool<ConnectionManager>) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let mut conn = pool.get().await?; // ✅ Tidak pakai 'static, langsung gunakan 'a
         conn.simple_query("BEGIN TRANSACTION").await?; // Mulai transaksi
@@ -31,7 +31,7 @@ impl<'a> DbTransaction<'a> {
     }
 }
 
-impl<'a> Drop for DbTransaction<'a> {
+impl<'a> Drop for Transaction<'a> {
     fn drop(&mut self) {
         if !self.committed {
             if let Ok(mut conn_guard) = self.conn.try_lock() {

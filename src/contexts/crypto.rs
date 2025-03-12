@@ -16,9 +16,9 @@ fn generate_iv(plain_text: &str) -> [u8; 16] {
 }
 
 /// 🔐 Enkripsi teks dengan AES-256-CTR (IV tetap sama untuk teks yang sama)
-pub fn encrypt_text(plain_text: &str) -> String {
+pub fn encrypt_text(plain_text: String) -> String {
     let key = SECRET_KEY;
-    let iv = generate_iv(plain_text); // Gunakan IV dari hash
+    let iv = generate_iv(&plain_text); // Gunakan IV dari hash
 
     // Inisialisasi cipher dengan key & IV
     let mut cipher = Aes256Ctr::new(key.into(), &iv.into());

@@ -3,7 +3,11 @@ use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use tiberius::QueryStream;
-use crate::contexts::{connection::DbTransaction, crypto::encrypt_text, model::{ActionResult, ChangePasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest, WebUser}};
+use crate::contexts::{
+    connection::Transaction, 
+    crypto::encrypt_text, 
+    model::{ActionResult, ChangePasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest, WebUser}
+};
 use super::generic_service::GenericService;
 
 pub struct AuthService;
@@ -12,7 +16,7 @@ impl AuthService {
     pub async fn login(connection: web::Data<Pool<ConnectionManager>>,request: LoginRequest) -> ActionResult<WebUser, String> {
         
         let mut result: ActionResult<WebUser, String> = ActionResult::default();
-        let enc_password = encrypt_text(&request.password);
+        let enc_password = encrypt_text(request.password.unwrap_or_default());
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -23,7 +27,7 @@ impl AuthService {
                     Ok(rows) => {
                         if let Ok(Some(row)) = rows.into_row().await {
                             result.result = true;
-                            result.message = format!("Welcome {}", request.email);
+                            result.message = format!("Welcome {}", request.email.unwrap_or_default());
                             result.data = Some(WebUser{
                                 auth_usernid: row.get("AuthUserNID").unwrap_or(0),
                                 email: row.get::<&str, _>("Email").map_or_else(|| "".to_string(), |s| s.to_string()),
@@ -38,7 +42,7 @@ impl AuthService {
 
                             return result;
                         } else {
-                            result.message = format!("No user found for email: {}", request.email);
+                            result.message = format!("No user found for email: {}", request.email.unwrap_or_default());
                             return result;
                         } 
                     },
@@ -58,7 +62,7 @@ impl AuthService {
     pub async fn register(connection: web::Data<Pool<ConnectionManager>>, request: RegisterRequest) -> ActionResult<(), String> {
         
         let mut result: ActionResult<(), String> = ActionResult::default();
-        let enc_password = encrypt_text(&request.password);
+        let enc_password = encrypt_text(request.password.unwrap_or_default());
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -87,7 +91,7 @@ impl AuthService {
                 return result;
             }
         }
-        match DbTransaction::begin(&connection).await {
+        match Transaction::begin(&connection).await {
             Ok(trans) => {
                 let auto_nid: i32;
 
@@ -103,7 +107,7 @@ impl AuthService {
                             VALUES
                             (@P1,@P2,@P3,@P4,@P5,@P6,@P7,@P8,@P9,@P10,@P11,@P12,@P13,@P14,@P15,@P16,@P17,@P18,@P19)"#,
                             &[
-                                &request.email, &request.mobile_phone, &request.fullname,
+                                &request.email, &request.mobile_phone, &request.full_name,
                                 &request.bank_account_number, &request.bank_account_holder,
                                 &request.question_rdn, &request.sales, &request.bank_name,
                                 &1i32, &0i32, &0i32, &0i32, &false, &false, &false, &false,
@@ -203,7 +207,7 @@ impl AuthService {
                 match query_result {
                     Ok(rows) => {
                         if let Ok(Some(row)) = rows.into_row().await {
-                            match DbTransaction::begin(&connection).await {
+                            match Transaction::begin(&connection).await {
                                 Ok(trans) => {
                                     // 🔴 Scope ketiga: Insert ke TableRequest
                                     match trans.conn.lock().await.as_mut() {
@@ -278,7 +282,7 @@ impl AuthService {
                 match query_result {
                     Ok(rows) => {
                         if let Ok(Some(row)) = rows.into_row().await {
-                            match DbTransaction::begin(&connection).await {
+                            match Transaction::begin(&connection).await {
                                 Ok(trans) => {
                                     // 🔴 Scope ketiga: Insert ke TableRequest
                                     match trans.conn.lock().await.as_mut() {
@@ -342,7 +346,7 @@ impl AuthService {
     pub async  fn change_password(connection: web::Data<Pool<ConnectionManager>>, request: ChangePasswordRequest) -> ActionResult<(), String> {
 
         let mut result: ActionResult<(), String> = ActionResult::default();
-        let enc_password = encrypt_text(&request.password);
+        let enc_password = encrypt_text(request.password.unwrap_or_default());
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -353,7 +357,7 @@ impl AuthService {
                 match query_result {
                     Ok(rows) => {
                         if let Ok(Some(row)) = rows.into_row().await {
-                            match DbTransaction::begin(&connection).await {
+                            match Transaction::begin(&connection).await {
                                 Ok(trans) => {
                                     // 🔴 Scope ketiga: Insert ke TableRequest
                                     match trans.conn.lock().await.as_mut() {
