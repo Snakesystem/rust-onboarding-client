@@ -40,14 +40,19 @@ async fn data_pribadi(pool: web::Data<Pool<ConnectionManager>>, request: web::Js
         Some(Ok(token)) => {
             match validate_jwt(&token) {
                 Ok(claims) => {
-                    let response = UserService::save_data_pribadi(pool, request.into_inner(), claims).await;
+                    let response: ActionResult<HashMap<String, String>, String> = UserService::save_data_pribadi(pool, request.into_inner(), claims).await;
 
-                    match response {
-                        result if result.error.is_some() => {
-                            HttpResponse::InternalServerError().json(result)
+                    result.result = response.result;
+                    result.message = response.message;
+                    result.data = response.data;
+                    result.error = response.error;
+
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
                         }, 
-                        result if result.result => HttpResponse::Ok().json(result), // Jika berhasil, HTTP 200
-                        result => HttpResponse::BadRequest().json(result), // Jika gagal, HTTP 400
+                        response if response.result => HttpResponse::Ok().json(response), // Jika berhasil, HTTP 200
+                        response => HttpResponse::BadRequest().json(response), // Jika gagal, HTTP 400
                     }
                 },
                 Err(err) => {

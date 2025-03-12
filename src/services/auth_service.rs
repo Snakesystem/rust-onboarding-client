@@ -194,7 +194,7 @@ impl AuthService {
         return result;
     }
 
-    pub async  fn activation_user(connection: web::Data<Pool<ConnectionManager>>, otp_link: String) -> ActionResult<(), String> {
+    pub async fn activation_user(connection: web::Data<Pool<ConnectionManager>>, otp_link: String) -> ActionResult<(), String> {
 
         let mut result: ActionResult<(), String> = ActionResult::default();
 

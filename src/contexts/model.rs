@@ -5,14 +5,14 @@ use crate::services::validation_service::validator::{
     required, valid_phone_number, valid_name, valid_number_card, required_int,
     required_datetime, validate_base64_image, valid_password
 };
-pub struct DateTimeConverter;
+// pub struct DateTimeConverter;
 
-impl DateTimeConverter {
-    pub fn from_string(date_str: &str) -> Result<chrono::NaiveDateTime, chrono::ParseError> {
-        let format = "%Y-%m-%d %H:%M:%S";
-        chrono::NaiveDateTime::parse_from_str(date_str, format)
-    }
-}
+// impl DateTimeConverter {
+//     pub fn from_string(date_str: &str) -> Result<chrono::NaiveDateTime, chrono::ParseError> {
+//         let format = "%Y-%m-%d %H:%M:%S";
+//         chrono::NaiveDateTime::parse_from_str(date_str, format)
+//     }
+// }
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct LoginRequest {
@@ -65,6 +65,10 @@ pub struct DataPribadiRequest {
     pub nationality: i32,
     #[validate(custom(function = "required_int"))]
     pub sex: i32,
+    #[validate(custom(function = "required_int"))]
+    pub residence_status: i32,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_owner: i32,
     #[validate(custom(function = "required"))]
     pub birth_place: Option<String>,
     #[validate(custom(function = "required_datetime"))]
@@ -78,11 +82,12 @@ pub struct DataPribadiRequest {
     pub marital_status: i32,
     #[validate(custom(function = "required_int"))]
     pub education: i32,
-    pub education_text: Option<String>,
     pub copy_id: Option<bool>,
     #[validate(custom(function = "required_datetime"))]
     #[serde(deserialize_with  = "deserialize_date_only")]
     pub idcard_expireddate  : Option<DateTime<Utc>>,
+    #[validate(custom(function = "required"))]
+    pub idcard_country  : Option<String>,
 
     #[validate(custom(function = "validate_base64_image"))]
     pub idcard_file: String,
