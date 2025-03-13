@@ -110,3 +110,46 @@ Response Body(500):
     "data": "Please check connection server"
 }
 ```
+
+## Update CIF State 2
+Endpoint: **POST** `/api/v1/user/data-bank`
+
+Request Header:
+- Authorized token (Cookies)
+
+Request Body:
+```json
+{
+    "question_rdn": 6,
+    "bank_name": "Bank BCA",
+    "bank_account_holder": "Slamet",
+    "bank_account_number": "123456789",
+    "bank_branch": "Jakarta"
+}
+```
+
+Response Body(200):
+```json
+{
+    "result": true,
+    "message": "Save CIF Stage 1 Success"
+}
+```
+
+Response Body(400):
+```json
+{
+    "result": false,
+    "message": "Invalid request",
+    "data": "ID Card is required, .etc"
+}
+```
+
+Response Body(500):
+```json
+{
+    "result": false,
+    "message": "Internal Server Error",
+    "data": "Please check connection server"
+}
+```

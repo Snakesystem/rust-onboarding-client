@@ -1,6 +1,6 @@
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use serde::{Deserialize, Deserializer, Serialize};
-use validator::{Validate, ValidationError};
+use validator::Validate;
 use crate::services::validation_service::validator::{
     required, valid_phone_number, valid_name, valid_number_card, required_int,
     required_datetime, validate_base64_image, valid_password
@@ -86,8 +86,8 @@ pub struct DataPribadiRequest {
     #[validate(custom(function = "required_datetime"))]
     #[serde(deserialize_with  = "deserialize_date_only")]
     pub idcard_expireddate  : Option<DateTime<Utc>>,
-    #[validate(custom(function = "required"))]
-    pub idcard_country  : Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub idcard_country  : i32,
 
     #[validate(custom(function = "validate_base64_image"))]
     pub idcard_file: String,
@@ -168,8 +168,8 @@ pub struct DataPekerjaanRequest {
     pub occupation: i32,
     pub occupation_text: Option<String>,
     #[validate(custom(function = "required_int"))]
-    pub nature_business: i32,
-    pub nature_business_text: Option<String>,
+    pub nature_bussiness: i32,
+    pub nature_bussiness_text: Option<String>,
     #[validate(custom(function = "required_int"))]
     pub position: i32,
     pub position_text: Option<String>,
@@ -181,14 +181,16 @@ pub struct DataPekerjaanRequest {
     pub spouse_relationship: i32,
     #[validate(custom(function = "required_int"))]
     pub spouse_occupation: i32,
+    pub spouse_occupation_text: Option<String>,
     #[validate(custom(function = "required_int"))]
     pub spouse_fund_source: i32,
+    pub spouse_fund_source_text: Option<String>,
     #[validate(custom(function = "required_int"))]
     pub spouse_position: i32,
     #[validate(custom(function = "required_int"))]
     pub spouse_income_peranum: i32,
     #[validate(custom(function = "required_int"))]
-    pub spouse_nature_business: i32,
+    pub spouse_nature_bussiness: i32,
     #[validate(custom(function = "required"))]
     pub spouse_company_name: Option<String>,
     #[validate(custom(function = "required_int"))]
@@ -218,29 +220,24 @@ pub struct DataPendukungRequest {
 
     pub question_6: bool,
     pub question_6text: Option<String>,
-}
 
-impl DataPendukungRequest {
-    pub fn validate(&self) -> Result<(), ValidationError> {
-        self.validate_question_text(&self.question_1, &self.question_1text, "question_1text")?;
-        self.validate_question_text(&self.question_2, &self.question_2text, "question_2text")?;
-        self.validate_question_text(&self.question_3, &self.question_3text, "question_3text")?;
-        Ok(())
-    }
-
-    fn validate_question_text(
-        &self,
-        question: &bool,
-        text: &Option<String>,
-        field_name: &str,
-    ) -> Result<(), ValidationError> {
-        if *question && text.as_ref().map(|s| s.trim().is_empty()).unwrap_or(true) {
-            let mut error = ValidationError::new("required");
-            error.message = Some(format!("{} is required when the corresponding question is true", field_name).into());
-            return Err(error);
-        }
-        Ok(())
-    }
+    #[validate(custom(function = "required_int"))]
+    pub investment_objective: i32,
+    
+    #[validate(custom(function = "required_int"))]
+    pub risk: i32,
+    
+    #[validate(custom(function = "required"))]
+    pub question_fatca: Option<String>,
+    
+    #[validate(custom(function = "required"))]
+    pub fatca_1: Option<String>,
+    
+    #[validate(custom(function = "required"))]
+    pub fatca_2: Option<String>,
+    
+    #[validate(custom(function = "required"))]
+    pub fatca_3: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -289,6 +286,109 @@ pub struct WebUser {
     pub picture: Option<String>,
     #[serde(serialize_with = "serialize_datetime")]
     pub register_date: chrono::DateTime<Utc>
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct UserInfo {
+    pub autonid: i32,
+    pub stage: i16,
+    pub client_id: String,
+    pub cif_id: String,
+    pub is_revised: bool,
+    pub is_rejected: bool,
+    pub is_finished: bool,
+    pub account_status: String,
+    pub mobile_phone: String,
+    pub email: String,
+    pub full_name: String,
+    pub spouse_relationship: i32,
+    pub spouse_name: String,
+    pub mother_name: String,
+    pub nationality: i32,
+    pub idcard_country: i32,
+    pub idcard_number: String,
+    #[serde(serialize_with = "serialize_datetime")]
+    pub idcard_expire_date: chrono::DateTime<Utc>,
+    pub sex: i32,
+    pub birth_place: String,
+    #[serde(serialize_with = "serialize_datetime")]
+    pub birth_date: chrono::DateTime<Utc>,
+    pub birth_country: i32,
+    pub religion: i32,
+    pub marital_status: i32,
+    pub education: i32,
+    pub idcard_city: i32,
+    pub idcard_district: String,
+    pub idcard_subdistrict: String,
+    pub idcard_rt: String,
+    pub idcard_rw: String,
+    pub idcard_zipcode: String,
+    pub idcard_address: String,
+    pub copy_id: bool,
+    pub domicile_city: i32,
+    pub domicile_district: String,
+    pub domicile_subdistrict: String,
+    pub domicile_rt: String,
+    pub domicile_rw: String,
+    pub domicile_address: String,
+    pub domicile_zipcode: String,
+    pub question_rdn: i32,
+    pub bank_name: String,
+    pub bank_branch: String,
+    pub bank_account_number: String,
+    pub bank_account_holder: String,
+    pub question_npwp: i32,
+    pub npwp_number: String,
+    pub npwp_reason: String,
+    pub company_name: String,
+    pub fund_source: i32,
+    pub fund_source_text: String,
+    pub occupation: i32,
+    pub occupation_text: String,
+    pub nature_bussiness: i32,
+    pub nature_bussiness_text: String,
+    pub position: i32,
+    pub position_text: String,
+    pub income_peranum: i32,
+    pub question_1: bool,
+    pub question_1text: String,
+    pub question_2: bool,
+    pub question_2text: String,
+    pub question_3: bool,
+    pub question_3text: String,
+    pub question_4: bool,
+    pub question_4text: String,
+    pub question_5: bool,
+    pub question_5text: String,
+    pub question_6: bool,
+    pub question_6text: String,
+    pub invesment_objective: i32,
+    pub risk: i32,
+    pub question_fatca: String,
+    pub fatca_1: String,
+    pub fatca_2: String,
+    pub fatca_3: String,
+    pub spouse_income_peranum: i32,
+    pub spouse_occupation: i32,
+    pub spouse_occupation_text: String,
+    pub spouse_position: i32,
+    pub spouse_nature_bussiness: i32,
+    pub spouse_fund_source: i32,
+    pub spouse_fund_source_text: String,
+    pub spouse_company_name: String,
+    pub spouse_company_city: i32,
+    pub spouse_company_address: String,
+    pub spouse_company_zipcode: String,
+    pub idcard_file: String,
+    pub selfie_file: String,
+    pub signature_file: String,
+    pub npwp_file: String,
+    pub sales: i32,
+    pub company_city: i32,
+    pub company_address: String,
+    pub company_zipcode: String,
+    pub beneficiary_owner: i32,
+    pub residence_status: i32,
 }
 
 #[derive(Debug, Serialize, Clone)]
