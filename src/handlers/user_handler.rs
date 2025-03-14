@@ -1,12 +1,16 @@
 use std::collections::HashMap;
-
 use actix_identity::Identity;
 use actix_web::{get, post, web, HttpResponse, Responder, Scope};
 use bb8::Pool;
 use bb8_tiberius::ConnectionManager;
 use validator::{Validate, ValidationError};
 
-use crate::{contexts::{jwt_session::validate_jwt, model::{ActionResult, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, UserInfo}}, services::{user_service::UserService, validation_service::validator::format_validation_errors}};
+use crate::{
+    contexts::{
+        jwt_session::validate_jwt, 
+        model::{ActionResult, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, UserInfo}}, 
+    services::{user_service::UserService, validation_service::validator::format_validation_errors, file_service::FileService}
+};
 
 pub fn user_scope() -> Scope {
     
@@ -83,6 +87,8 @@ async fn data_pribadi(pool: web::Data<Pool<ConnectionManager>>, request: web::Js
 
     let mut result: ActionResult<HashMap<String, String>, _> = ActionResult::default();
 
+    let email = request.email.as_deref().ok_or_else(|| "Email is required".to_string());
+
     match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
@@ -91,7 +97,38 @@ async fn data_pribadi(pool: web::Data<Pool<ConnectionManager>>, request: web::Js
         Some(Ok(token)) => {
             match validate_jwt(&token) {
                 Ok(claims) => {
-                    let response: ActionResult<HashMap<String, String>, String> = UserService::save_data_pribadi(pool, request.into_inner(), claims).await;
+                    let mut request: DataPribadiRequest = request.clone(); // Ubah menjadi mutable
+                    match email {
+                        Ok(email) => {
+                            match FileService::save_base64_image(email, &request.idcard_file, "KTP") {
+                                Ok(saved_path) => request.idcard_file = saved_path,
+                                Err(err) => {
+                                    result.error = Some(err.to_string());
+                                    return HttpResponse::InternalServerError().json(result);
+                                },
+                            }
+                            match FileService::save_base64_image(email, &request.selfie_file, "Selfie") {
+                                Ok(saved_path) => request.selfie_file = saved_path,
+                                Err(err) => {
+                                    result.error = Some(err.to_string());
+                                    return HttpResponse::InternalServerError().json(result);
+                                },
+                            }
+                            match FileService::save_base64_image(email, &request.signature_file, "Signature") {
+                                Ok(saved_path) => request.signature_file = saved_path,
+                                Err(err) => {
+                                    result.error = Some(err.to_string());
+                                    return HttpResponse::InternalServerError().json(result);
+                                },
+                            }
+                        },
+                        Err(err) => {
+                            result.error = Some(err.to_string());
+                            return HttpResponse::BadRequest().json(result);
+                        },
+                    }
+
+                    let response: ActionResult<HashMap<String, String>, String> = UserService::save_data_pribadi(pool, request, claims).await;
 
                     result.result = response.result;
                     result.message = response.message;
@@ -199,7 +236,17 @@ async fn data_pekerjaan(pool: web::Data<Pool<ConnectionManager>>, request: web::
         Some(Ok(token)) => {
             match validate_jwt(&token) {
                 Ok(claims) => {
-                    let response: ActionResult<HashMap<String, String>, String> = UserService::save_data_pekerjaan(pool, request.into_inner(), claims).await;
+                    let mut request: DataPekerjaanRequest = request.clone(); // Ubah menjadi mutable
+
+                    match FileService::save_base64_image(&claims.email, &request.npwp_file, "NPWP") {
+                        Ok(saved_path) => request.npwp_file = saved_path,
+                        Err(err) => {
+                            result.error = Some(err.to_string());
+                            return HttpResponse::InternalServerError().json(result);
+                        },
+                    }
+
+                    let response: ActionResult<HashMap<String, String>, String> = UserService::save_data_pekerjaan(pool, request, claims).await;
 
                     result.result = response.result;
                     result.message = response.message;
@@ -323,7 +370,6 @@ async fn data_pendukung(pool: web::Data<Pool<ConnectionManager>>, request: web::
         },
     }
 }
-
 
 #[post("/beneficiary-owner")]
 async fn data_beneficiary(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<DataBeneficiaryRequest>, session: Option<Identity>) -> impl Responder {

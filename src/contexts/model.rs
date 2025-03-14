@@ -49,7 +49,7 @@ pub struct RegisterRequest {
     pub app_ipaddress: String
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, Clone)]
 pub struct DataPribadiRequest {
     #[validate(custom(function = "required"), email(message = "Invalid email format"))]
     pub email: Option<String>,
@@ -145,7 +145,7 @@ pub struct DataBankRequest {
     pub bank_branch: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, Clone)]
 pub struct DataPekerjaanRequest {
     #[validate(custom(function = "required"))]
     pub company_name: Option<String>,
@@ -157,6 +157,8 @@ pub struct DataPekerjaanRequest {
     pub company_zipcode: Option<String>,
     #[validate(custom(function = "required_int"))]
     pub question_npwp: i32,
+    #[validate(custom(function = "validate_base64_image"))]
+    pub npwp_file: String,
     #[validate(custom(function = "required"))]
     pub npwp_reason: Option<String>,
     #[validate(custom(function = "required"), custom(function = "valid_number_card"))]

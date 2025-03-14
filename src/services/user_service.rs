@@ -227,9 +227,9 @@ impl UserService {
                                                     &request.domicile_rw,
                                                     &request.domicile_zipcode,
                                                     &request.domicile_address,
-                                                    &"request.idcard_file",
-                                                    &"request.selfie_file",
-                                                    &"request.signature_file",
+                                                    &request.idcard_file,
+                                                    &request.selfie_file,
+                                                    &request.signature_file,
                                                     &request.idcard_country,
                                                     &auto_nid
                                                 ],
@@ -412,8 +412,8 @@ impl UserService {
                                                 [SpouseNatureOfBusiness] = @P19,[SpouseCompanyName] = @P20,[SpouseCompanyCity] = @P21,  
                                                 [SpouseCompanyZipcode] = @P22,[SpouseCompanyAddress] = @P23,  
                                                 [SpouseFundSource] = @P24,[SpouseFundSourceText] = @P25, [SpouseOccupationText] = @P26, [SpouseName] = @P27,
-                                                [SpouseRelationship] = @P28
-                                                WHERE AutoNID = @P29"#,
+                                                [SpouseRelationship] = @P28, [NPWPFile] = @P29
+                                                WHERE AutoNID = @P30"#,
                                                 &[
                                                     &4i32,
                                                     &request.question_npwp,
@@ -443,6 +443,7 @@ impl UserService {
                                                     &request.spouse_occupation_text,
                                                     &request.spouse_name,
                                                     &request.spouse_relationship,
+                                                    &request.npwp_file,
                                                     &auto_nid
                                                 ],
                                             ).await {

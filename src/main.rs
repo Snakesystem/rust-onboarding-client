@@ -1,4 +1,5 @@
 use actix_cors::Cors;
+use actix_files::Files;
 use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{ cookie::{time::Duration, Key}, get, http::{self}, middleware::{self}, web::{self, route}, App, HttpServer};
@@ -62,6 +63,7 @@ async fn main() -> std::io::Result<()> {
             .service(option_scope())
             .service(user_scope())
             .service(file_scope())
+            .service(Files::new("/static", "./static").show_files_listing()) // Static files di luar src/
         )
         .app_data(web::Data::new(db_pool.clone()))
         .app_data(web::JsonConfig::default().error_handler(generic_service::GenericService::json_error_handler))
