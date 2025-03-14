@@ -344,7 +344,7 @@ pub struct UserInfo {
     pub spouse_name: String,
     pub mother_name: String,
     pub nationality: i32,
-    pub idcard_country: i32,
+    pub idcard_country: String,
     pub idcard_number: String,
     #[serde(serialize_with = "serialize_datetime")]
     pub idcard_expire_date: chrono::DateTime<Utc>,

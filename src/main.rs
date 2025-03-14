@@ -3,7 +3,7 @@ use actix_identity::IdentityMiddleware;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{ cookie::{time::Duration, Key}, get, http::{self}, middleware::{self}, web::{self, route}, App, HttpServer};
 use contexts::{connection::create_pool, logger::write_log};
-use handlers::{auth_handler::auth_scope, generic_handler::generic_scope, option_handler::option_scope, user_handler::user_scope};
+use handlers::{auth_handler::auth_scope, file_handler::file_scope, generic_handler::generic_scope, option_handler::option_scope, user_handler::user_scope};
 use log::info;
 use services::generic_service::{self};
 
@@ -20,6 +20,7 @@ mod handlers {
     pub mod generic_handler;
     pub mod option_handler;
     pub mod user_handler;
+    pub mod file_handler; 
 }
 
 mod services {
@@ -28,6 +29,7 @@ mod services {
     pub mod option_service;
     pub mod user_service;
     pub mod validation_service;
+    pub mod file_service;
 }
 
 #[get("/")]
@@ -59,6 +61,7 @@ async fn main() -> std::io::Result<()> {
             .service(generic_scope())
             .service(option_scope())
             .service(user_scope())
+            .service(file_scope())
         )
         .app_data(web::Data::new(db_pool.clone()))
         .app_data(web::JsonConfig::default().error_handler(generic_service::GenericService::json_error_handler))

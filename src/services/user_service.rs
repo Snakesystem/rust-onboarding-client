@@ -50,7 +50,7 @@ impl UserService {
                                 spouse_name: row.get::<&str, _>("SpouseName").map_or_else(|| "".to_string(), |s| s.to_string()),
                                 mother_name: row.get::<&str, _>("MotherName").map_or_else(|| "".to_string(), |s| s.to_string()),
                                 nationality: row.get::<i32, _>("Nationality").unwrap_or(0),
-                                idcard_country: row.get::<i32, _>("IDCardCountry").unwrap_or(0),
+                                idcard_country: row.get::<&str, _>("IDCardCountry").map_or_else(|| "".to_string(), |s| s.to_string()),
                                 idcard_number: row.get::<&str, _>("IDCardNumber").map_or_else(|| "".to_string(), |s| s.to_string()),
                                 idcard_expire_date: row
                                     .get::<NaiveDateTime, _>("IDCardExpireDate")
