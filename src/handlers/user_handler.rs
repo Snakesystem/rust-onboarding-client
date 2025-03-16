@@ -324,7 +324,6 @@ async fn data_pendukung(pool: web::Data<Pool<ConnectionManager>>, request: web::
     }
 }
 
-
 #[post("/beneficiary-owner")]
 async fn data_beneficiary(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<DataBeneficiaryRequest>, session: Option<Identity>) -> impl Responder {
 

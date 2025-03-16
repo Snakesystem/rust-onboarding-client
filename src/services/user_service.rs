@@ -557,8 +557,34 @@ impl UserService {
                                             return result;
                                         }
                                     }
+                                    
+                                    match trans.conn.lock().await.as_mut() {
+                                        Some(conn) => {
+                                            if let Err(err) = conn.execute(
+                                        r#"UPDATE [dbo].[TableRequest]  
+                                                SET [ContactPersonName] = @P1, [ContactPersonRelation] = @P2, [ContactPersonHomePhone] = @P3,   
+                                                [ContactPersonMobilePhone] = @P4, [ContactPersonAddress] = @P5  
+                                                WHERE WebCIFNID = @P6"#,
+                                                &[
+                                                    &request.contact_person_name,
+                                                    &request.contact_person_relation,
+                                                    &request.contact_person_home_phone,
+                                                    &request.contact_person_mobile_phone,
+                                                    &request.contact_person_address,
+                                                    &auto_nid
+                                                ],
+                                            ).await {
+                                                result.error = Some(format!("Fauled: {:?}", err));
+                                                return result;
+                                            }
+                                        }
+                                        None => {
+                                            result.error = Some("Failed to get database connection".into());
+                                            return result;
+                                        }
+                                    }
 
-                                    // 🔵 Commit transaksi
+                                    // 🔵 Commit transaction
                                     if let Err(err) = trans.commit().await {
                                         result.error = Some(format!("Failed to commit transaction: {:?}", err));
                                         return result;
