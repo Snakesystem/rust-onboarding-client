@@ -333,107 +333,107 @@ pub struct DataPendukungRequest {
 #[derive(Debug, Deserialize, Validate)]
 pub struct DataBeneficiaryRequest {
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_name: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_name: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_mother_maiden_name: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_mother_maiden_name: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_relation: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_relation: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_sex: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_sex: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_birth_place: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_birth_place: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_birth_date: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_birth_date: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_nationality: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_nationality: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_idcard_type: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_idcard_type: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_idcard_number: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_idcard_number: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_idcard_expiredate: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_idcard_expiredate: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_email: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_email: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_npwp_number: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_npwp_number: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_npwp_number: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_npwp_number: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_address1: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_address1: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_address2: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_address2: Option<String>,
     
-    #[validate(custom(function = "required"))]
-    pub beneficiary_address3: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_address3: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_kelurahan: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_kelurahan: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_kecamatan: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_kecamatan: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_rt: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_rt: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_rw: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_rw: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_city: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_city: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_province: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_province: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_country: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_country: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_mobile_phone: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_mobile_phone: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_occupation: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
-    #[validate(custom(function = "required"))]
-    pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_occupation: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub beneficiary_postalcode: Option<String>,
 
     pub question_1: bool,
     pub question_1text: Option<String>,
