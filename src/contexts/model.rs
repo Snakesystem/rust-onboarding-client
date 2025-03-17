@@ -211,6 +211,9 @@ pub struct DataPekerjaanRequest {
     #[validate(custom(function = "required"))]
     pub npwp_reason: Option<String>,
 
+    #[validate(custom(function = "validate_base64_image"))]
+    pub npwp_file: String,
+
     #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
     pub npwp_number: Option<String>,
 
