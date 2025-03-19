@@ -100,16 +100,18 @@ impl AuthService {
                     Some(conn) => {
                         match conn.query(
                             r#"INSERT INTO [dbo].[UserKyc] 
-                            ([Email],[MobilePhone],[Fullname],[BankAccountNumber],[BankAccountHolder],
-                            [QuestionRDN],[Sales],[BankName],[Stage],[CIFNID],[ChangeNID],[PendingCIFNID],
+                            ([Email],[MobilePhone],[Fullname],[Sales],[Stage],[CIFNID],[ChangeNID],[PendingCIFNID],
                             [IsRejected],[IsFinished],[IsRevised],[IsImported],[SaveTime],[LastUpdate],[SaveIpAddress])
                             OUTPUT INSERTED.AutoNID
                             VALUES
-                            (@P1,@P2,@P3,@P4,@P5,@P6,@P7,@P8,@P9,@P10,@P11,@P12,@P13,@P14,@P15,@P16,@P17,@P18,@P19)"#,
+                            (@P1,@P2,@P3,@P4,@P5,@P6,@P7,@P8,@P9,@P10,@P11,@P12,@P13,@P14,@P15)"#,
                             &[
                                 &request.email, &request.mobile_phone, &request.full_name,
-                                &request.bank_account_number, &request.bank_account_holder,
-                                &request.question_rdn, &request.sales, &request.bank_name,
+                                // &request.bank_account_number,
+                                //  &request.bank_account_holder,
+                                // &request.question_rdn,
+                                // &request.bank_name,
+                                 &request.sales, 
                                 &1i32, &0i32, &0i32, &0i32, &false, &false, &false, &false,
                                 &chrono::Utc::now(), &chrono::Utc::now(), &request.app_ipaddress,
                             ],
