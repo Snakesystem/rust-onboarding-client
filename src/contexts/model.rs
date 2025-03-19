@@ -37,17 +37,17 @@ pub struct RegisterRequest {
     #[validate(custom(function = "required"), custom(function = "valid_name"))]
     pub full_name: Option<String>,
 
-    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
-    pub bank_account_number: Option<String>,
+    // #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
+    // pub bank_account_number: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub bank_name: Option<String>,
+    // #[validate(custom(function = "required"))]
+    // pub bank_name: Option<String>,
 
-    #[validate(custom(function = "required"), custom(function = "valid_name"))]
-    pub bank_account_holder: Option<String>,
+    // #[validate(custom(function = "required"), custom(function = "valid_name"))]
+    // pub bank_account_holder: Option<String>,
 
-    #[validate(custom(function = "required_int"))]
-    pub question_rdn: i32,
+    // #[validate(custom(function = "required_int"))]
+    // pub question_rdn: i32,
 
     #[serde(default)]
     pub sales: i32,
@@ -55,7 +55,8 @@ pub struct RegisterRequest {
     #[serde(default)]
     pub referal: String,
 
-    pub client_category: u8,
+    #[validate(custom(function = "required_int"))]
+    pub client_category: Option<i32>,
 
     #[serde(default)]
     pub app_ipaddress: String
