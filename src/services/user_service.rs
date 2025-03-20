@@ -165,6 +165,7 @@ impl UserService {
 
         let mut result: ActionResult<HashMap<String, String>, String> = ActionResult::default();
         let current_stage: i32 = 1;
+        let mut set_stage: i32 = 1;
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -180,6 +181,15 @@ impl UserService {
 
                             if stage < current_stage {
                                 result.message = "Stage has ben first or 1".to_owned();
+                                return result;
+                            }
+                            
+                            if request.beneficiary_owner == 1 {
+                                set_stage = 2;
+                            } else if request.beneficiary_owner == 2 {
+                                set_stage = 1;
+                            } else {
+                                result.message = "Invalid beneficiary owner".to_owned();
                                 return result;
                             }
 
@@ -199,7 +209,7 @@ impl UserService {
                                                 [DomicileAddress] = @P28, [IDCardFile] = @P29, [SelfieFile] = @P30, [SignatureFile] = @P31, IDCardCountry = @P32
                                             WHERE AutoNID = @P33"#,
                                                 &[
-                                                    &2i32,
+                                                    &set_stage,
                                                     &request.full_name,
                                                     &request.nationality,
                                                     &request.idcard_number,
@@ -620,7 +630,7 @@ impl UserService {
     pub async fn save_data_beneficiary(connection: web::Data<Pool<ConnectionManager>>, request: DataBeneficiaryRequest, session: Claims) -> ActionResult<HashMap<String, String>, String> {
 
         let mut result: ActionResult<HashMap<String, String>, String> = ActionResult::default();
-        let current_stage: i32 = 4;
+        let current_stage: i32 = 1;
 
         match connection.clone().get().await {
             Ok(mut conn) => {
@@ -656,24 +666,6 @@ impl UserService {
                                                 WHERE AutoNID = @P20"#,
                                                 &[
                                                     &5i32,
-                                                    &request.question_1,
-                                                    &request.question_1text,
-                                                    &request.question_2,
-                                                    &request.question_2text,
-                                                    &request.question_3,
-                                                    &request.question_3text,
-                                                    &request.question_4,
-                                                    &request.question_4text,
-                                                    &request.question_5,
-                                                    &request.question_5text,
-                                                    &request.question_6,
-                                                    &request.question_6text,
-                                                    &request.investment_objective,
-                                                    &request.risk,
-                                                    &request.question_fatca,
-                                                    &request.fatca_1,
-                                                    &request.fatca_2,
-                                                    &request.fatca_3,
                                                     &auto_nid
                                                 ],
                                             ).await {
