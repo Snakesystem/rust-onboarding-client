@@ -290,9 +290,9 @@ async fn data_pendukung(pool: web::Data<Pool<ConnectionManager>>, request: web::
         return HttpResponse::BadRequest().json(result);
     }
 
-    let mut validation_errors = validator::ValidationErrors::new();
-
     let mut result: ActionResult<HashMap<String, String>, _> = ActionResult::default();
+
+    let mut validation_errors = validator::ValidationErrors::new();
 
     if request.question_1 && request.question_1text.as_deref().unwrap_or("").trim().is_empty() {
         let error = ValidationError::new("required");

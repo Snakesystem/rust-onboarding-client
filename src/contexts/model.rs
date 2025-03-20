@@ -336,6 +336,9 @@ pub struct DataPendukungRequest {
 #[derive(Debug, Deserialize, Validate)]
 pub struct DataBeneficiaryRequest {
 
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_owner: i32,
+
     #[validate(custom(function = "required"))]
     pub beneficiary_name: Option<String>,
 
@@ -343,33 +346,35 @@ pub struct DataBeneficiaryRequest {
     pub beneficiary_mother_maiden_name: Option<String>,
 
     #[validate(custom(function = "required_int"))]
-    pub beneficiary_relation: Option<i32>,
+    pub beneficiary_relation: i32,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_sex: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_sex: i32,
 
     #[validate(custom(function = "required"))]
     pub beneficiary_birth_place: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_birth_date: Option<String>,
+    #[validate(custom(function = "required_datetime"))]
+    #[serde(deserialize_with  = "deserialize_date_only")]
+    pub beneficiary_birth_date: Option<DateTime<Utc>>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_nationality: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_nationality: i32,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_idcard_type: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_idcard_type: i32,
 
-    #[validate(custom(function = "required"))]
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
     pub beneficiary_idcard_number: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_idcard_expiredate: Option<String>,
+    #[validate(custom(function = "required_datetime"))]
+    #[serde(deserialize_with  = "deserialize_date_only")]
+    pub beneficiary_idcard_expiredate: Option<DateTime<Utc>>,
 
     #[validate(custom(function = "required"))]
     pub beneficiary_email: Option<String>,
 
-    #[validate(custom(function = "required"))]
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
     pub beneficiary_npwp_number: Option<String>,
 
     #[validate(custom(function = "required"))]
@@ -387,31 +392,30 @@ pub struct DataBeneficiaryRequest {
     #[validate(custom(function = "required"))]
     pub beneficiary_kecamatan: Option<String>,
 
-    #[validate(custom(function = "required"))]
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
     pub beneficiary_rt: Option<String>,
 
-    #[validate(custom(function = "required"))]
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
     pub beneficiary_rw: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_city: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_city: i32,
 
     #[validate(custom(function = "required"))]
     pub beneficiary_province: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_country: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_country: i32,
 
-    #[validate(custom(function = "required"))]
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
     pub beneficiary_postalcode: Option<String>,
 
-    #[validate(custom(function = "required"))]
+    #[validate(custom(function = "required"), custom(function = "valid_phone_number"))]
     pub beneficiary_mobile_phone: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_occupation: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_occupation: i32,
 
-    #[validate(custom(function = "required"))]
     pub beneficiary_occupation_text: Option<String>,
 
     #[validate(custom(function = "required"))]
@@ -423,8 +427,8 @@ pub struct DataBeneficiaryRequest {
     #[validate(custom(function = "required"))]
     pub beneficiary_nature_bussiness: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_income_peranum: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_income_peranum: i32,
 
     #[validate(custom(function = "required"))]
     pub beneficiary_company_address: Option<String>,
@@ -435,19 +439,21 @@ pub struct DataBeneficiaryRequest {
     #[validate(custom(function = "required"))]
     pub beneficiary_company_address3: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_company_city: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_company_city: i32,
 
     #[validate(custom(function = "required"))]
     pub beneficiary_company_province: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_company_country: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_company_country: i32,
+
+    #[validate(custom(function = "required"), custom(function = "valid_number_card"))]
+    pub beneficiary_company_postalcode: Option<String>,
 
     #[validate(custom(function = "required"))]
     pub beneficiary_fund_source: Option<String>,
 
-    #[validate(custom(function = "required"))]
     pub beneficiary_fund_source_text: Option<String>,
 }
 

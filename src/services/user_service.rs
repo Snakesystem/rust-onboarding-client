@@ -165,8 +165,8 @@ impl UserService {
 
         let mut result: ActionResult<HashMap<String, String>, String> = ActionResult::default();
         let current_stage: i32 = 1;
-        let mut set_stage: i32 = 1;
-
+        let set_stage: i32;
+        
         match connection.clone().get().await {
             Ok(mut conn) => {
                 let query_result: Result<QueryStream, _> = conn.query(
@@ -642,10 +642,15 @@ impl UserService {
                     Ok(rows) => {
                         if let Ok(Some(row)) = rows.into_row().await {
                             let stage: i32 = row.get("Stage").unwrap_or(0);
-                            let auto_nid: i32 = row.get("AutoNID").unwrap_or(0);
+                            let auto_nid: i32 = row.get("AutoNID").unwrap_or(0); 
 
                             if stage < current_stage {
-                                result.message = "Stage has ben second or 4".to_owned();
+                                result.message = "Stage has ben second or 1".to_owned();
+                                return result;
+                            }
+
+                            if request.beneficiary_owner == 1 {
+                                result.message = "Invalid beneficiary owner".to_owned();
                                 return result;
                             }
 
@@ -655,17 +660,68 @@ impl UserService {
                                     match trans.conn.lock().await.as_mut() {
                                         Some(conn) => {
                                             if let Err(err) = conn.execute(
-                                        r#"UPDATE [dbo].[UserKyc]  
-                                                SET [Stage] = @P1, [Question1] = @P2, [Question1Text] = @P3,   
-                                                [Question2] = @P4, [Question2Text] = @P5,   
-                                                [Question3] = @P6, [Question3Text] = @P7,   
-                                                [Question4] = @P8, [Question4Text] = @P9, [Question5] = @P10,  
-                                                [Question5Text] = @P11, [Question6] = @P12,   
-                                                [Question6Text] = @P13, [InvestmentObjectives] = @P14, [Risk] = @P15,  
-                                                [QuestionFATCA] = @P16, [FATCA1] = @P17, [FATCA2] = @P18, [FATCA3] = @P19, IsFinished = 1 
-                                                WHERE AutoNID = @P20"#,
+                                        r#"UPDATE [dbo].[TableRequest]  
+                                                SET [CIFInvestorBeneficiaryOwnerName] = @P1, [CIFInvestorBeneficiaryMothersMaidenName] = @P2, 
+                                                [CIFInvestorBeneficiaryOwnerRelation] = @P3, [CIFInvestorBeneficiaryOwnerSex] = @P4, 
+                                                [CIFInvestorBeneficiaryOwnerBirthPlace] = @P5, [CIFInvestorBeneficiaryOwnerBirthDate] = @P6, 
+                                                [CIFInvestorBeneficiaryOwnerNationality] = @P7, [CIFInvestorBeneficiaryOwnerIDCardType] = @P8, 
+                                                [CIFInvestorBeneficiaryOwnerIDCardNumber] = @P9, [CIFInvestorBeneficiaryOwnerIDCardExpiredDate] = @P10,  
+                                                [CIFInvestorBeneficiaryOwnerEmail] = @P11, [CIFInvestorBeneficiaryOwnerNPWPNumber] = @P12,   
+                                                [CIFInvestorBeneficiaryOwnerAddress1] = @P13, [CIFInvestorBeneficiaryOwnerAddress2] = @P14, 
+                                                [CIFInvestorBeneficiaryOwnerAddress3] = @P15, [CIFInvestorBeneficiaryOwnerKelurahan] = @P16, 
+                                                [CIFInvestorBeneficiaryOwnerKecamatan] = @P17, [CIFInvestorBeneficiaryOwnerRT] = @P18, 
+                                                [CIFInvestorBeneficiaryOwnerRW] = @P19, [CIFInvestorBeneficiaryOwnerCity] = @P20,
+                                                [CIFInvestorBeneficiaryOwnerProvince] = @P21, [CIFInvestorBeneficiaryOwnerCountry] = @P22,
+                                                [CIFInvestorBeneficiaryOwnerPostalCode] = @P23, [CIFInvestorBeneficiaryOwnerMobilePhone] = @P24,
+                                                [CIFInvestorBeneficiaryOwnerOccupation] = @P25, [CIFInvestorBeneficiaryOwnerOccupationText] = @P26,
+                                                [CIFInvestorBeneficiaryOwnerCompanyName] = @P27, [CIFInvestorBeneficiaryOwnerPosition] = @P28,
+                                                [CIFInvestorBeneficiaryOwnerNatureOfBusiness] = @P29, [CIFInvestorBeneficiaryOwnerIncomePerAnnum] = @P30,
+                                                [CIFInvestorBeneficiaryOwnerCompanyAddress] = @31, [CIFInvestorBeneficiaryOwnerCompanyAddress2] = @32,
+                                                [CIFInvestorBeneficiaryOwnerCompanyAddress3] = @33, [CIFInvestorBeneficiaryOwnerCompanyCity] = @P34,
+                                                [CIFInvestorBeneficiaryOwnerCompanyProvince] = @35, [CIFInvestorBeneficiaryOwnerCompanyPostalCode] = @36,
+                                                [CIFInvestorBeneficiaryOwnerCompanyCountry] = @37, [CIFInvestorBeneficiaryOwnerFundSource] = @38,
+                                                [CIFInvestorBeneficiaryOwnerFundSourceText] = @39
+                                                WHERE AutoNID = @40"#,
                                                 &[
-                                                    &5i32,
+                                                    &request.beneficiary_name,
+                                                    &request.beneficiary_mother_maiden_name,
+                                                    &request.beneficiary_relation,
+                                                    &request.beneficiary_sex,
+                                                    &request.beneficiary_birth_place,
+                                                    &request.beneficiary_birth_date,
+                                                    &request.beneficiary_nationality,
+                                                    &request.beneficiary_idcard_type,
+                                                    &request.beneficiary_idcard_number,
+                                                    &request.beneficiary_idcard_expiredate,
+                                                    &request.beneficiary_email,
+                                                    &request.beneficiary_npwp_number,
+                                                    &request.beneficiary_address1,
+                                                    &request.beneficiary_address2,
+                                                    &request.beneficiary_address3,
+                                                    &request.beneficiary_kelurahan,
+                                                    &request.beneficiary_kecamatan,
+                                                    &request.beneficiary_rt,
+                                                    &request.beneficiary_rw,
+                                                    &request.beneficiary_city,
+                                                    &request.beneficiary_province,
+                                                    &request.beneficiary_country,
+                                                    &request.beneficiary_postalcode,
+                                                    &request.beneficiary_mobile_phone,
+                                                    &request.beneficiary_occupation,
+                                                    &request.beneficiary_occupation_text,
+                                                    &request.beneficiary_company_name,
+                                                    &request.beneficiary_position,
+                                                    &request.beneficiary_nature_bussiness,
+                                                    &request.beneficiary_income_peranum,
+                                                    &request.beneficiary_company_address,
+                                                    &request.beneficiary_company_address2,
+                                                    &request.beneficiary_company_address3,
+                                                    &request.beneficiary_company_city,
+                                                    &request.beneficiary_company_province,
+                                                    &request.beneficiary_company_postalcode,
+                                                    &request.beneficiary_company_country,
+                                                    &request.beneficiary_fund_source,
+                                                    &request.beneficiary_fund_source_text,
                                                     &auto_nid
                                                 ],
                                             ).await {
