@@ -676,12 +676,12 @@ impl UserService {
                                                 [CIFInvestorBeneficiaryOwnerOccupation] = @P25, [CIFInvestorBeneficiaryOwnerOccupationText] = @P26,
                                                 [CIFInvestorBeneficiaryOwnerCompanyName] = @P27, [CIFInvestorBeneficiaryOwnerPosition] = @P28,
                                                 [CIFInvestorBeneficiaryOwnerNatureOfBusiness] = @P29, [CIFInvestorBeneficiaryOwnerIncomePerAnnum] = @P30,
-                                                [CIFInvestorBeneficiaryOwnerCompanyAddress] = @31, [CIFInvestorBeneficiaryOwnerCompanyAddress2] = @32,
-                                                [CIFInvestorBeneficiaryOwnerCompanyAddress3] = @33, [CIFInvestorBeneficiaryOwnerCompanyCity] = @P34,
-                                                [CIFInvestorBeneficiaryOwnerCompanyProvince] = @35, [CIFInvestorBeneficiaryOwnerCompanyPostalCode] = @36,
-                                                [CIFInvestorBeneficiaryOwnerCompanyCountry] = @37, [CIFInvestorBeneficiaryOwnerFundSource] = @38,
-                                                [CIFInvestorBeneficiaryOwnerFundSourceText] = @39
-                                                WHERE AutoNID = @40"#,
+                                                [CIFInvestorBeneficiaryOwnerCompanyAddress] = @P31, [CIFInvestorBeneficiaryOwnerCompanyAddress2] = @P32,
+                                                [CIFInvestorBeneficiaryOwnerCompanyAddress3] = @P33, [CIFInvestorBeneficiaryOwnerCompanyCity] = @P34,
+                                                [CIFInvestorBeneficiaryOwnerCompanyProvince] = @P35, [CIFInvestorBeneficiaryOwnerCompanyPostalCode] = @P36,
+                                                [CIFInvestorBeneficiaryOwnerCompanyCountry] = @P37, [CIFInvestorBeneficiaryOwnerFundSource] = @P38,
+                                                [CIFInvestorBeneficiaryOwnerFundSourceText] = @P39
+                                                WHERE WebCIFNID = @P40"#,
                                                 &[
                                                     &request.beneficiary_name,
                                                     &request.beneficiary_mother_maiden_name,
@@ -732,6 +732,43 @@ impl UserService {
                                         None => {
                                             result.error = Some("Failed to get database connection".into());
                                             return result;
+                                        }
+                                    }
+
+                                    match Transaction::begin(&connection).await {
+                                        Ok(trans) => {
+                                            // 🔴 Scope ketiga: Insert ke TableRequest
+                                            match trans.conn.lock().await.as_mut() {
+                                                Some(conn) => {
+                                                    if let Err(err) = conn.execute(
+                                                    r#"UPDATE [dbo].[UserKYC]
+                                                        SET [Stage] = @P1 WHERE AutoNID = @P2"#,
+                                                        &[
+                                                            &2i32,
+                                                            &auto_nid
+                                                        ],
+                                                    ).await {
+                                                        result.error = Some(format!("Fauled: {:?}", err));
+                                                        return result;
+                                                    }
+                                                }
+                                                None => {
+                                                    result.error = Some("Failed to get database connection".into());
+                                                    return result;
+                                                }
+                                            }
+        
+                                            // 🔵 Commit transaksi
+                                            if let Err(err) = trans.commit().await {
+                                                result.error = Some(format!("Failed to commit transaction: {:?}", err));
+                                                return result;
+                                            }
+                            
+                                            result.result = true;
+                                            result.message = "Update personal data successfully".to_string();
+                                        }
+                                        Err(err) => {
+                                            result.error = Some(format!("Failed to start transaction: {:?}", err));
                                         }
                                     }
 

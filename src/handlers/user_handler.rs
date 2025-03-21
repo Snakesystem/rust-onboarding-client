@@ -20,6 +20,7 @@ pub fn user_scope() -> Scope {
         .service(data_pekerjaan)
         .service(data_pendukung)
         .service(get_user_info)
+        .service(data_beneficiary)
 }
 
 #[get("/userinfo")]

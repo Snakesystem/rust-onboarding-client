@@ -383,10 +383,8 @@ pub struct DataBeneficiaryRequest {
     #[validate(custom(function = "required"))]
     pub beneficiary_address2: Option<String>,
     
-    #[validate(custom(function = "required"))]
     pub beneficiary_address3: Option<String>,
 
-    #[validate(custom(function = "required"))]
     pub beneficiary_kelurahan: Option<String>,
 
     #[validate(custom(function = "required"))]
@@ -421,11 +419,11 @@ pub struct DataBeneficiaryRequest {
     #[validate(custom(function = "required"))]
     pub beneficiary_company_name: Option<String>,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_position: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_position: i32,
 
-    #[validate(custom(function = "required"))]
-    pub beneficiary_nature_bussiness: Option<String>,
+    #[validate(custom(function = "required_int"))]
+    pub beneficiary_nature_bussiness: i32,
 
     #[validate(custom(function = "required_int"))]
     pub beneficiary_income_peranum: i32,
