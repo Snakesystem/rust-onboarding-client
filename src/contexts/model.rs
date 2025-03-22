@@ -655,3 +655,29 @@ where
     }
     Ok(None)
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct TableDataParams {
+    pub tablename: String,
+    pub limit: i32,
+    pub offset: i32,
+    pub filter: Option<String>,
+    pub sort: Option<String>,
+    pub order: Option<String>,
+    pub nidkey: Option<String>,
+    // pub nidvalue: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct QueryClass {
+    pub query: String,
+    pub query_total_all: String,
+    pub query_total_with_filter: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ResultList {
+    pub total_not_filtered: i32,
+    pub total: i32,
+    pub rows: Vec<serde_json::Value>, // Pastikan ini bisa dikonversi ke JSON
+}

@@ -8,7 +8,7 @@ use validator::{Validate, ValidationError};
 use crate::{
     contexts::{
         jwt_session::validate_jwt, 
-        model::{ActionResult, CIFFileRequest, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, UserInfo}}, 
+        model::{ActionResult, CIFFileRequest, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, ResultList, TableDataParams, UserInfo}}, 
     services::{admin_service::AdminService, file_service::FileService, validation_service::validator::format_validation_errors}
 };
 
@@ -22,6 +22,51 @@ pub fn admin_scope() -> Scope {
         .service(get_user_info)
         .service(data_beneficiary)
         .service(data_cif_file)
+        .service(get_table_data)
+}
+
+#[get("/get-table")]
+async fn get_table_data(params: web::Query<TableDataParams>, pool: web::Data<Pool<ConnectionManager>>, session: Option<Identity>) -> impl Responder {
+
+    let mut result = ActionResult::default();
+
+    match session.map(|id| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(_) => {
+                    let data: Result<ResultList, Box<dyn std::error::Error>> = AdminService::get_table_data(params.into_inner(), pool).await;
+
+                    match data {
+                        Ok(response) => {
+                            result.result = true;
+                            result.message = "Retrieve data success".to_string();
+                            result.data = Some(response);
+                            return HttpResponse::Ok().json(result);
+                        },
+                        Err(e) => {
+                            result.result = true;
+                            result.message = "Session active".to_string();
+                            result.error = Some(e.to_string());
+                            return HttpResponse::InternalServerError().json(result);
+                        },
+                        
+                    }
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
+    }
 }
 
 #[get("/userinfo")]
