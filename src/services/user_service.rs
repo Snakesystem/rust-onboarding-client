@@ -8,7 +8,7 @@ use tiberius::QueryStream;
 use crate::contexts::{
     connection::Transaction, 
     jwt_session::Claims, 
-    model::{ActionResult, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, UserInfo}
+    model::{ActionResult, CIFFileRequest, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, UserInfo}
 };
 
 pub struct UserService;
@@ -161,6 +161,86 @@ impl UserService {
         
     }
 
+    pub async fn save_cif_file(connection: web::Data<Pool<ConnectionManager>>, request: CIFFileRequest, session: Claims) -> ActionResult<HashMap<String, String>, String> {
+
+        let mut result: ActionResult<HashMap<String, String>, String> = ActionResult::default();
+        let current_stage: i32 = 1;
+
+        match connection.clone().get().await {
+            Ok(mut conn) => {
+                let query_result: Result<QueryStream, _> = conn.query(
+                    r#"SELECT AutoNID, Stage 
+                    FROM UserKyc 
+                    WHERE AutoNID = @P1"#, &[&session.auth_usernid]).await;
+                match query_result {
+                    Ok(rows) => {
+                        if let Ok(Some(row)) = rows.into_row().await {
+                            let stage: i32 = row.get("Stage").unwrap_or(0);
+                            let auto_nid: i32 = row.get("AutoNID").unwrap_or(0);
+
+                            if stage < current_stage {
+                                result.message = "Stage has ben second or 2".to_owned();
+                                return result;
+                            }
+
+                            match Transaction::begin(&connection).await {
+                                Ok(trans) => {
+                                    // 🔴 Scope ketiga: Insert ke TableRequest
+                                    match trans.conn.lock().await.as_mut() {
+                                        Some(conn) => {
+                                            if let Err(err) = conn.execute(
+                                            r#"UPDATE [dbo].[UserKYC]
+                                                SET [IDCardFile] = @P1, [SelfieFile] = @P2, [SignatureFile] = @P3
+                                            WHERE AutoNID = @P4"#,
+                                                &[
+                                                    &request.idcard_file,
+                                                    &request.selfie_file,
+                                                    &request.signature_file,
+                                                    &auto_nid
+                                                ],
+                                            ).await {
+                                                result.error = Some(format!("Fauled: {:?}", err));
+                                                return result;
+                                            }
+                                        }
+                                        None => {
+                                            result.error = Some("Failed to get database connection".into());
+                                            return result;
+                                        }
+                                    }
+
+                                    // 🔵 Commit transaksi
+                                    if let Err(err) = trans.commit().await {
+                                        result.error = Some(format!("Failed to commit transaction: {:?}", err));
+                                        return result;
+                                    }
+                    
+                                    result.result = true;
+                                    result.message = "Update personal data successfully".to_string();
+                                }
+                                Err(err) => {
+                                    result.error = Some(format!("Failed to start transaction: {:?}", err));
+                                }
+                            }
+                    
+                        } else {
+                            result.message = format!("No user found for email");
+                        }
+                    },
+                    Err(err) => {
+                        result.error = format!("Query execution failed: {:?}", err).into();
+                    },
+                }
+            },
+            Err(err) => {
+                result.error = format!("Internal Server error: {:?}", err).into();
+                return result;
+            }, 
+        }
+
+        return result;
+    }
+
     pub async fn save_data_pribadi(connection: web::Data<Pool<ConnectionManager>>, request: DataPribadiRequest, session: Claims) -> ActionResult<HashMap<String, String>, String> {
 
         let mut result: ActionResult<HashMap<String, String>, String> = ActionResult::default();
@@ -206,8 +286,8 @@ impl UserService {
                                                 [IDCardSubdistrict] = @P16, [IDCardRT] = @P17, [IDCardRW] = @P18, [IDCardZipcode] = @P19, 
                                                 [IDCardAddress] = @P20, [CopyID] = @P21, [DomicileCity] = @P22, [DomicileDistrict] = @P23, 
                                                 [DomicileSubdistrict] = @P24, [DomicileRT] = @P25, [DomicileRW] = @P26, [DomicileZipcode] = @P27, 
-                                                [DomicileAddress] = @P28, [IDCardFile] = @P29, [SelfieFile] = @P30, [SignatureFile] = @P31, IDCardCountry = @P32
-                                            WHERE AutoNID = @P33"#,
+                                                [DomicileAddress] = @P28, IDCardCountry = @P29
+                                            WHERE AutoNID = @P30"#,
                                                 &[
                                                     &set_stage,
                                                     &request.full_name,
@@ -237,9 +317,6 @@ impl UserService {
                                                     &request.domicile_rw,
                                                     &request.domicile_zipcode,
                                                     &request.domicile_address,
-                                                    &request.idcard_file,
-                                                    &request.selfie_file,
-                                                    &request.signature_file,
                                                     &request.idcard_country,
                                                     &auto_nid
                                                 ],

@@ -175,6 +175,19 @@ pub struct DataPribadiRequest {
     // #endregion
 }
 
+#[derive(Debug, Deserialize, Validate, Clone)]
+pub struct CIFFileRequest {
+    #[validate(custom(function = "validate_base64_image"))]
+    pub idcard_file: String,
+
+    #[validate(custom(function = "validate_base64_image"))]
+    pub selfie_file: String,
+
+    #[validate(custom(function = "validate_base64_image"))]
+    pub signature_file: String
+    // #endregion
+}
+
 #[derive(Debug, Deserialize, Validate)]
 pub struct DataBankRequest {
     #[validate(custom(function = "required_int"))]

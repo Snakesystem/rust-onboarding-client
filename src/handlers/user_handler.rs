@@ -8,8 +8,8 @@ use validator::{Validate, ValidationError};
 use crate::{
     contexts::{
         jwt_session::validate_jwt, 
-        model::{ActionResult, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, UserInfo}}, 
-    services::{user_service::UserService, validation_service::validator::format_validation_errors, file_service::FileService}
+        model::{ActionResult, CIFFileRequest, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, UserInfo}}, 
+    services::{file_service::FileService, user_service::UserService, validation_service::validator::format_validation_errors}
 };
 
 pub fn user_scope() -> Scope {
@@ -21,6 +21,7 @@ pub fn user_scope() -> Scope {
         .service(data_pendukung)
         .service(get_user_info)
         .service(data_beneficiary)
+        .service(data_cif_file)
 }
 
 #[get("/userinfo")]
@@ -70,6 +71,83 @@ pub async fn get_user_info(pool: web::Data<Pool<ConnectionManager>>, session: Op
     }
 }
 
+#[post("/save-cif-file")]
+async fn data_cif_file(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<CIFFileRequest>, session: Option<Identity>) -> impl Responder {
+
+    if let Err(errors) = request.validate() {
+        let formatted_errors: HashMap<String, String> = format_validation_errors(&errors);
+        
+        let result: ActionResult<HashMap<String, String>, _> = ActionResult {
+            result: false,
+            message: "Validation failed".to_string(),
+            data: None,
+            error: Some(formatted_errors),
+        };
+
+        return HttpResponse::BadRequest().json(result);
+    }
+
+    let mut result: ActionResult<HashMap<String, String>, _> = ActionResult::default();
+
+    match session.map(|id: Identity| id.id()) {
+        None => {
+            result.error = Some("Token not found".to_string());
+            return HttpResponse::Unauthorized().json(result);
+        },
+        Some(Ok(token)) => {
+            match validate_jwt(&token) {
+                Ok(claims) => {
+                    let mut request: CIFFileRequest = request.clone(); // Ubah menjadi mutable
+                    match FileService::save_base64_image(&claims.email, &request.idcard_file, "KTP") {
+                        Ok(saved_path) => request.idcard_file = saved_path,
+                        Err(err) => {
+                            result.error = Some(err.to_string());
+                            return HttpResponse::InternalServerError().json(result);
+                        },
+                    }
+                    match FileService::save_base64_image(&claims.email, &request.selfie_file, "Selfie") {
+                        Ok(saved_path) => request.selfie_file = saved_path,
+                        Err(err) => {
+                            result.error = Some(err.to_string());
+                            return HttpResponse::InternalServerError().json(result);
+                        },
+                    }
+                    match FileService::save_base64_image(&claims.email, &request.signature_file, "Signature") {
+                        Ok(saved_path) => request.signature_file = saved_path,
+                        Err(err) => {
+                            result.error = Some(err.to_string());
+                            return HttpResponse::InternalServerError().json(result);
+                        },
+                    }
+
+                    let response: ActionResult<HashMap<String, String>, String> = UserService::save_cif_file(pool, request, claims).await;
+
+                    result.result = response.result;
+                    result.message = response.message;
+                    result.data = response.data;
+                    result.error = response.error;
+
+                    match result {
+                        response if response.error.is_some() => {
+                            HttpResponse::InternalServerError().json(response)
+                        }, 
+                        response if response.result => HttpResponse::Ok().json(response), // Jika berhasil, HTTP 200
+                        response => HttpResponse::BadRequest().json(response), // Jika gagal, HTTP 400
+                    }
+                },
+                Err(err) => {
+                    result.error = Some(err.to_string());
+                    return HttpResponse::Unauthorized().json(result);
+                },
+            }
+        },
+        Some(Err(_)) => {
+            result.error = Some("Invalid token".to_string());
+            return HttpResponse::BadRequest().json(result);
+        },
+    }
+}
+
 #[post("/data-pribadi")]
 async fn data_pribadi(pool: web::Data<Pool<ConnectionManager>>, request: web::Json<DataPribadiRequest>, session: Option<Identity>) -> impl Responder {
 
@@ -88,8 +166,6 @@ async fn data_pribadi(pool: web::Data<Pool<ConnectionManager>>, request: web::Js
 
     let mut result: ActionResult<HashMap<String, String>, _> = ActionResult::default();
 
-    let email = request.email.as_deref().ok_or_else(|| "Email is required".to_string());
-
     match session.map(|id: Identity| id.id()) {
         None => {
             result.error = Some("Token not found".to_string());
@@ -98,36 +174,7 @@ async fn data_pribadi(pool: web::Data<Pool<ConnectionManager>>, request: web::Js
         Some(Ok(token)) => {
             match validate_jwt(&token) {
                 Ok(claims) => {
-                    let mut request: DataPribadiRequest = request.clone(); // Ubah menjadi mutable
-                    match email {
-                        Ok(email) => {
-                            match FileService::save_base64_image(email, &request.idcard_file, "KTP") {
-                                Ok(saved_path) => request.idcard_file = saved_path,
-                                Err(err) => {
-                                    result.error = Some(err.to_string());
-                                    return HttpResponse::InternalServerError().json(result);
-                                },
-                            }
-                            match FileService::save_base64_image(email, &request.selfie_file, "Selfie") {
-                                Ok(saved_path) => request.selfie_file = saved_path,
-                                Err(err) => {
-                                    result.error = Some(err.to_string());
-                                    return HttpResponse::InternalServerError().json(result);
-                                },
-                            }
-                            match FileService::save_base64_image(email, &request.signature_file, "Signature") {
-                                Ok(saved_path) => request.signature_file = saved_path,
-                                Err(err) => {
-                                    result.error = Some(err.to_string());
-                                    return HttpResponse::InternalServerError().json(result);
-                                },
-                            }
-                        },
-                        Err(err) => {
-                            result.error = Some(err.to_string());
-                            return HttpResponse::BadRequest().json(result);
-                        },
-                    }
+                    let request: DataPribadiRequest = request.clone(); // Ubah menjadi mutable
 
                     let response: ActionResult<HashMap<String, String>, String> = UserService::save_data_pribadi(pool, request, claims).await;
 
