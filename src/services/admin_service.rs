@@ -8,7 +8,7 @@ use tiberius::{QueryStream, Row};
 use std::fmt::Write;
 
 use crate::contexts::{
-    connection::Transaction, jwt_session::Claims, logger::write_log, model::{ActionResult, CIFFileRequest, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, QueryClass, ResultList, TableDataParams, UserInfo}
+    connection::Transaction, jwt_session::Claims, model::{ActionResult, CIFFileRequest, DataBankRequest, DataBeneficiaryRequest, DataPekerjaanRequest, DataPendukungRequest, DataPribadiRequest, QueryClass, ResultList, TableDataParams, UserInfo}
 };
 
 pub struct AdminService;
@@ -17,8 +17,8 @@ impl AdminService {
 
     pub async fn get_table_data( allparams: TableDataParams, connection: web::Data<Pool<ConnectionManager>>) -> Result<ResultList, Box<dyn std::error::Error>> {
         let mut result = ResultList {
-            total_not_filtered: 0,
             total: 0,
+            total_with_filter: 0,
             rows: vec![],
         };
     
@@ -29,7 +29,9 @@ impl AdminService {
         if !allparams.tablename.is_empty() {
             let row: Option<Row> = client.query(query.query_total_all.clone(), &[]).await?.into_row().await?;
             if let Some(r) = row {
-                result.total_not_filtered = r.try_get::<i32, _>(0)?.unwrap_or(0);
+                result.total = r.try_get::<i64, _>("total")
+                .or_else(|_| r.try_get::<i32, _>("total").map(|opt| opt.map(|v| v as i64)))? // ✅ Perbaiki konversi
+                .unwrap_or(0);
             }
         }
     
@@ -38,14 +40,16 @@ impl AdminService {
             if filter != "{filter:undefined}" {
                 let row: Option<Row> = client.query(query.query_total_with_filter.clone(), &[]).await?.into_row().await?;
                 if let Some(r) = row {
-                    result.total = r.try_get::<i32, _>(0)?.unwrap_or(0);
+                    result.total_with_filter = r.try_get::<i64, _>("totalWithFilter")
+                    .or_else(|_| r.try_get::<i32, _>("totalWithFilter").map(|opt| opt.map(|v| v as i64)))? // ✅ Perbaiki konversi
+                    .unwrap_or(0);
                 }
             }
         } else {
-            result.total = result.total_not_filtered;
+            result.total_with_filter = result.total;
         }
     
-        write_log("INFO", &format!("Query: {}", query.query));
+        // write_log("INFO", &format!("Query: {}", query.query));
     
         let rows = client.query(query.query.clone(), &[]).await?.into_results().await?;
         result.rows = rows.into_iter()
@@ -68,7 +72,10 @@ impl AdminService {
         }
     
         let tablename = format!("[{}]", allparams.tablename);
-        let query_total_all = format!("SELECT count(*) as total FROM {}", tablename);
+        let query_total_all = format!(
+            "SELECT SUM(rows) as total FROM sys.partitions WHERE object_id = OBJECT_ID('{}') AND index_id IN (0,1)",
+            tablename
+        );        
         let mut q_and_where = String::from(" WHERE 1=1 ");
         let mut q_order_by = String::new();
         let mut q_skip_row = String::new();
