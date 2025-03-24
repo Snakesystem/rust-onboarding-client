@@ -98,36 +98,39 @@ async fn data_cif_file(pool: web::Data<Pool<ConnectionManager>>, request: web::J
             match validate_jwt(&token) {
                 Ok(claims) => {
                     let mut request: CIFFileRequest = request.clone(); // Ubah menjadi mutable
-                    match FileService::save_base64_image(&claims.email, &request.idcard_file, "KTP") {
-                        Ok(saved_path) => {
-                            request.idcard_file = saved_path;
-                            println!("KTP handler: {}", request.idcard_file);
-                        },
-                        Err(err) => {
-                            result.error = Some(err.to_string());
-                            return HttpResponse::InternalServerError().json(result);
-                        },
-                    }
-                    match FileService::save_base64_image(&claims.email, &request.selfie_file, "Selfie") {
-                        Ok(saved_path) => {
-                            request.selfie_file = saved_path;
-                            println!("Selfie hanlder: {}", request.selfie_file);
-                        },
-                        Err(err) => {
-                            result.error = Some(err.to_string());
-                            return HttpResponse::InternalServerError().json(result);
-                        },
-                    }
-                    match FileService::save_base64_image(&claims.email, &request.signature_file, "Signature") {
-                        Ok(saved_path) => {
-                            request.signature_file = saved_path;
-                            println!("Signature handler: {}", request.signature_file);
-                        },
-                        Err(err) => {
-                            result.error = Some(err.to_string());
-                            return HttpResponse::InternalServerError().json(result);
-                        },
-                    }
+                    
+                    if !request.is_updated {
+                        match FileService::save_base64_image(&claims.email, &request.idcard_file, "KTP") {
+                            Ok(saved_path) => {
+                                request.idcard_file = saved_path;
+                                println!("KTP handler: {}", request.idcard_file);
+                            },
+                            Err(err) => {
+                                result.error = Some(err.to_string());
+                                return HttpResponse::InternalServerError().json(result);
+                            },
+                        }
+                        match FileService::save_base64_image(&claims.email, &request.selfie_file, "Selfie") {
+                            Ok(saved_path) => {
+                                request.selfie_file = saved_path;
+                                println!("Selfie hanlder: {}", request.selfie_file);
+                            },
+                            Err(err) => {
+                                result.error = Some(err.to_string());
+                                return HttpResponse::InternalServerError().json(result);
+                            },
+                        }
+                        match FileService::save_base64_image(&claims.email, &request.signature_file, "Signature") {
+                            Ok(saved_path) => {
+                                request.signature_file = saved_path;
+                                println!("Signature handler: {}", request.signature_file);
+                            },
+                            Err(err) => {
+                                result.error = Some(err.to_string());
+                                return HttpResponse::InternalServerError().json(result);
+                            },
+                        }
+                    } 
 
                     let response: ActionResult<HashMap<String, String>, String> = UserService::save_cif_file(pool, request, claims).await;
 

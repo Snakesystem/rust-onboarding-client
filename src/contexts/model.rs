@@ -184,7 +184,9 @@ pub struct CIFFileRequest {
     pub selfie_file: String,
 
     #[validate(custom(function = "validate_base64_image"))]
-    pub signature_file: String
+    pub signature_file: String,
+
+    pub is_updated: bool
     // #endregion
 }
 
