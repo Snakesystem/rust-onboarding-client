@@ -1,7 +1,7 @@
 use bb8::{Pool, PooledConnection};
 use bb8_tiberius::ConnectionManager;
 use tiberius::Config;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, MutexGuard};
 use std::{env, sync::Arc};
 
 pub type DbPool = Pool<ConnectionManager>;
@@ -22,7 +22,7 @@ impl<'a> Transaction<'a> {
     }
 
     pub async fn commit(mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let mut conn_guard = self.conn.lock().await;
+        let mut conn_guard: MutexGuard<Option<PooledConnection<ConnectionManager>>> = self.conn.lock().await;
         if let Some(mut conn) = conn_guard.take() {
             conn.simple_query("COMMIT").await?;
         }
@@ -46,18 +46,24 @@ impl<'a> Drop for Transaction<'a> {
 
 /// Membuat pool koneksi database
 pub async fn create_pool(database: &str) -> Result<DbPool, Box<dyn std::error::Error + Send + Sync>> {
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL harus diatur");
-    let database_user = env::var("DATABASE_USER").expect("DATABASE_USER harus diatur");
-    let database_password = env::var("DATABASE_PASSWORD").expect("DATABASE_PASSWORD harus diatur");
+    let database_url: String = env::var("DATABASE_URL").expect("DATABASE_URL harus diatur");
+    let database_user: String = env::var("DATABASE_USER").expect("DATABASE_USER harus diatur");
+    let database_password: String = env::var("DATABASE_PASSWORD").expect("DATABASE_PASSWORD harus diatur");
 
     let connection_string = format!(
         "Server={};User={};Password={};TrustServerCertificate=true;Database={}",
         database_url, database_user, database_password, database
     );
 
-    let config = Config::from_ado_string(&connection_string)?;
-    let manager = ConnectionManager::new(config);
-    let pool = Pool::builder().max_size(10).build(manager).await?;
+    let config: Config = Config::from_ado_string(&connection_string)?;
+    let manager: ConnectionManager = ConnectionManager::new(config);
+    let pool: Pool<ConnectionManager> = Pool::builder()
+            .max_size(10)
+            .connection_timeout(std::time::Duration::from_secs(30))
+            .idle_timeout(std::time::Duration::from_secs(60))
+            .max_lifetime(std::time::Duration::from_secs(300))
+            .max_size(10)
+            .build(manager).await?;
 
     Ok(pool)
 }

@@ -183,6 +183,8 @@ impl UserService {
                                 return result;
                             }
 
+                            println!("KTP: {}, Selfie: {}, Signature: {}", request.idcard_file, request.selfie_file, request.signature_file);
+
                             match Transaction::begin(&connection).await {
                                 Ok(trans) => {
                                     // 🔴 Scope ketiga: Insert ke TableRequest

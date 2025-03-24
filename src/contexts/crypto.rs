@@ -32,19 +32,19 @@ pub fn encrypt_text(plain_text: String) -> String {
 }
 
 // 🔓 Dekripsi teks dengan AES-256-CTR
-// pub fn decrypt_text(encrypted_text: &str, original_text: &str) -> String {
-//     let key = SECRET_KEY;
-//     let iv = generate_iv(original_text); // Dapatkan IV dari teks asli
+pub fn decrypt_text(encrypted_text: &str, original_text: &str) -> String {
+    let key = SECRET_KEY;
+    let iv = generate_iv(original_text); // Dapatkan IV dari teks asli
 
-//     // Decode Base64 URL-Safe ke Ciphertext
-//     let encrypted_data = URL_SAFE.decode(encrypted_text).expect("Invalid Base64");
+    // Decode Base64 URL-Safe ke Ciphertext
+    let encrypted_data = URL_SAFE.decode(encrypted_text).expect("Invalid Base64");
 
-//     // Inisialisasi cipher dengan key & IV
-//     let mut cipher = Aes256Ctr::new(key.into(), &iv.into());
+    // Inisialisasi cipher dengan key & IV
+    let mut cipher = Aes256Ctr::new(key.into(), &iv.into());
 
-//     // Dekripsi data
-//     let mut decrypted_data = encrypted_data.to_vec();
-//     cipher.apply_keystream(&mut decrypted_data);
+    // Dekripsi data
+    let mut decrypted_data = encrypted_data.to_vec();
+    cipher.apply_keystream(&mut decrypted_data);
 
-//     String::from_utf8(decrypted_data).expect("Invalid UTF-8")
-// }
+    String::from_utf8(decrypted_data).expect("Invalid UTF-8")
+}

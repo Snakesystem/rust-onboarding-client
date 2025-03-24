@@ -59,7 +59,7 @@ async fn main() -> std::io::Result<()> {
             .supports_credentials()
             .max_age(3600);
         App::new()
-            .service(web::scope("/api/v1")
+            .service(web::scope("/v1")
             .service(auth_scope())
             .service(generic_scope())
             .service(option_scope())
