@@ -26,13 +26,15 @@ impl FileService {
         
         // Format tanggal
         let date_str = Local::now().format("%Y%m%d").to_string();
+        let time_str = Local::now().format("%H%M%S").to_string();
         
         // Generate random string untuk nama folder
         let random_str = GenericService::random_string_by_suffix(30, &email, &file_name);
-        
+        let new_file_name = format!("{}-{}", file_name, time_str);
+
         // Buat path folder dan file
         let save_folder = PathBuf::from(format!("{}/{}{}", path_env, random_str, date_str));
-        let save_path = save_folder.join(format!("{}.{}", file_name, format));
+        let save_path = save_folder.join(format!("{}.{}", new_file_name, format));
         
         // Buat folder jika belum ada
         fs::create_dir_all(&save_folder).map_err(|e| format!("Failed to create folder: {}", e))?;
@@ -42,7 +44,7 @@ impl FileService {
         file.write_all(&image_bytes).map_err(|e| format!("Failed to write file: {}", e))?;
         
         // Return path yang akan disimpan ke database
-        Ok(format!("{}/{}.{}", format!("{}{}", random_str, date_str), file_name, format))
+        Ok(format!("{}/{}.{}", format!("{}{}", random_str, date_str), new_file_name, format))
     }
 
 }

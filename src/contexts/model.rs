@@ -177,16 +177,14 @@ pub struct DataPribadiRequest {
 
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct CIFFileRequest {
-    #[validate(custom(function = "validate_base64_image"))]
+    #[validate(custom(function = "required"))]
     pub idcard_file: String,
 
-    #[validate(custom(function = "validate_base64_image"))]
+    #[validate(custom(function = "required"))]
     pub selfie_file: String,
 
-    #[validate(custom(function = "validate_base64_image"))]
+    #[validate(custom(function = "required"))]
     pub signature_file: String,
-
-    pub is_updated: bool
     // #endregion
 }
 

@@ -98,8 +98,8 @@ async fn data_cif_file(pool: web::Data<Pool<ConnectionManager>>, request: web::J
             match validate_jwt(&token) {
                 Ok(claims) => {
                     let mut request: CIFFileRequest = request.clone(); // Ubah menjadi mutable
-                    
-                    if !request.is_updated {
+
+                    if request.idcard_file.starts_with("data:image/") {
                         match FileService::save_base64_image(&claims.email, &request.idcard_file, "KTP") {
                             Ok(saved_path) => {
                                 request.idcard_file = saved_path;
@@ -110,6 +110,9 @@ async fn data_cif_file(pool: web::Data<Pool<ConnectionManager>>, request: web::J
                                 return HttpResponse::InternalServerError().json(result);
                             },
                         }
+                    } 
+
+                    if request.selfie_file.starts_with("data:image/") {
                         match FileService::save_base64_image(&claims.email, &request.selfie_file, "Selfie") {
                             Ok(saved_path) => {
                                 request.selfie_file = saved_path;
@@ -120,6 +123,9 @@ async fn data_cif_file(pool: web::Data<Pool<ConnectionManager>>, request: web::J
                                 return HttpResponse::InternalServerError().json(result);
                             },
                         }
+                    } 
+
+                    if request.signature_file.starts_with("data:image/") {
                         match FileService::save_base64_image(&claims.email, &request.signature_file, "Signature") {
                             Ok(saved_path) => {
                                 request.signature_file = saved_path;
